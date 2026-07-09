@@ -1,0 +1,4 @@
+$ bun run serve.ts
+team-site serving on http://0.0.0.0:3000
+[db] Using SQLite (local dev)
+error: script "start" was terminated by signal SIGTERM (Polite quit request)
