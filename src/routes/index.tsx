@@ -1,40 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { readFile } from "node:fs/promises";
 
 import { Button } from "~/components/Button";
 import { Card, CardBody } from "~/components/Card";
 import { Badge } from "~/components/Badge";
-import { getDb } from "~/db/local";
 
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "";
-  } catch {
-    return "";
-  }
-});
-
-const submitEarlyAccess = createServerFn({ method: "POST" }).handler(async (data: unknown) => {
-  const { email } = data as { email: string };
-  const db = getDb();
-  try {
-    db.query("INSERT INTO early_access (email) VALUES ($1)").run(email);
-    return { success: true, message: "You're on the list! We'll be in touch soon." };
-  } catch (err: any) {
-    if (err?.message?.includes("UNIQUE")) {
-      return { success: false, message: "You're already on the waitlist!" };
-    }
-    return { success: false, message: "Something went wrong. Please try again." };
-  }
-});
+const EARLY_ACCESS_API = "/api/early-access";
 
 export const Route = createFileRoute("/")({
-  loader: () => getBusinessName(),
   component: Home,
 });
 
@@ -105,7 +78,6 @@ const testimonials = [
 ];
 
 function Home() {
-  const businessName = Route.useLoaderData();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -121,10 +93,20 @@ function Home() {
     if (!email.trim() || !email.includes("@")) return;
     setSubmitting(true);
     setStatus(null);
-    const result = await submitEarlyAccess({ email: email.trim() });
-    setSubmitting(false);
-    setStatus({ type: result.success ? "success" : "error", message: result.message });
-    if (result.success) setEmail("");
+    try {
+      const res = await fetch(EARLY_ACCESS_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const result = await res.json();
+      setSubmitting(false);
+      setStatus({ type: result.success ? "success" : "error", message: result.message });
+      if (result.success) setEmail("");
+    } catch {
+      setSubmitting(false);
+      setStatus({ type: "error", message: "Something went wrong. Please try again." });
+    }
   };
 
   return (

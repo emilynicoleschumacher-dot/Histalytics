@@ -1,205 +1,228 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getDb, getOrCreateDefaultUser } from "~/db/local";
-import { readFile } from "node:fs/promises";
 import { PageHeader, EmptyState } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Badge } from "~/components/Badge";
 import { Button } from "~/components/Button";
 import { Input } from "~/components/Input";
-
-const getIngredientData = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getDb();
-  const userId = getOrCreateDefaultUser();
-
-  const known = db.query("SELECT id, name, category, histamine_level, common_in, notes FROM known_ingredients ORDER BY name").all();
-  const topLogged = db.query(`
-    SELECT name, COUNT(*) as count, category
-    FROM ingredient_logs WHERE user_id = $1
-    GROUP BY name ORDER BY count DESC LIMIT 10
-  `).all(userId);
-
-  const flareCorrelations = db.query(`
-    SELECT il.name, COUNT(*) as flare_count, ROUND(AVG(sl.severity), 1) as avg_severity
-    FROM ingredient_logs il
-    JOIN ingredient_flare_links ifl ON il.id = ifl.ingredient_log_id
-    JOIN symptom_logs sl ON ifl.symptom_log_id = sl.id
-    WHERE il.user_id = $1
-    GROUP BY il.name ORDER BY flare_count DESC LIMIT 10
-  `).all(userId);
-
-  return { known, topLogged, flareCorrelations };
-});
+import { getKnownIngredients, logIngredient, getIngredientHistory, getIngredientTrends } from "~/lib/data-store";
 
 export const Route = createFileRoute("/ingredients")({
-  loader: () => getIngredientData(),
   component: Ingredients,
 });
 
-const logIng = createServerFn({ method: "POST" }).handler(async (data: unknown) => {
-  const { name, histamineLevel, notes } = data as any;
-  const db = getDb();
-  const userId = getOrCreateDefaultUser();
-  db.query(`
-    INSERT INTO ingredient_logs (user_id, name, category, source_type, histamine_level, notes)
-    VALUES ($1, $2, 'food', 'manual', $3, $4)
-  `).run(userId, name, histamineLevel ?? "unknown", notes ?? null);
-  return { success: true };
-});
-
-const categoryColors: Record<string, string> = {
-  "food-additive": "bg-orange-100 text-orange-700 border-orange-200",
-  "preservative": "bg-amber-100 text-amber-700 border-amber-200",
-  "color": "bg-pink-100 text-pink-700 border-pink-200",
-  "fragrance": "bg-purple-100 text-purple-700 border-purple-200",
-  "chemical": "bg-slate-100 text-slate-700 border-slate-200",
-  "botanical": "bg-green-100 text-green-700 border-green-200",
-  "other": "bg-gray-100 text-gray-600 border-gray-200",
-};
-
-const histColors: Record<string, string> = {
-  high: "bg-red-100 text-red-700 border-red-200",
-  moderate: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  low: "bg-green-100 text-green-700 border-green-200",
-  unknown: "bg-gray-100 text-gray-500 border-gray-200",
-};
-
 function Ingredients() {
-  const { known, topLogged, flareCorrelations } = Route.useLoaderData() as any;
   const [search, setSearch] = useState("");
-  const [logMode, setLogMode] = useState<string | null>(null);
-  const [logName, setLogName] = useState("");
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [ingName, setIngName] = useState("");
+  const [ingCategory, setIngCategory] = useState("food");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const filtered = known.filter((k: any) =>
-    k.name.toLowerCase().includes(search.toLowerCase())
+  const known = getKnownIngredients();
+  const history = getIngredientHistory();
+  const trends = getIngredientTrends();
+
+  const filteredKnown = known.filter((ing) =>
+    ing.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleQuickLog = async (name: string) => {
+  const handleLogIngredient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ingName.trim()) return;
     setSubmitting(true);
-    await logIng({ name, histamineLevel: "unknown" });
+    logIngredient({
+      name: ingName.trim(),
+      category: ingCategory,
+      sourceType: "manual",
+      notes: null,
+    });
     setSubmitting(false);
-    setLogMode(null);
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+      setIngName("");
+      setShowLogForm(false);
+    }, 1500);
   };
 
-  const handleCustomLog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!logName.trim()) return;
-    setSubmitting(true);
-    await logIng({ name: logName.trim() });
-    setSubmitting(false);
-    setLogName("");
-    setLogMode(null);
+  const quickLog = (name: string, category: string) => {
+    logIngredient({ name, category, sourceType: "manual", notes: null });
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 1500);
   };
 
   return (
     <div className="container-narrow py-8">
-      <PageHeader title="Ingredients" description="Track ingredients and identify your personal triggers">
-        <Button variant="outline" size="sm" onClick={() => setLogMode(logMode === "manual" ? null : "manual")}>
-          {logMode === "manual" ? "Cancel" : "+ Log Ingredient"}
+      <PageHeader
+        title="Ingredient Tracking"
+        description="Track specific ingredients and identify your personal triggers"
+      >
+        <Button size="sm" onClick={() => setShowLogForm(!showLogForm)}>
+          {showLogForm ? "Cancel" : "Log Ingredient"}
         </Button>
       </PageHeader>
 
-      {/* Manual log form */}
-      {logMode === "manual" && (
-        <Card className="mb-8">
+      {success && (
+        <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+          ✓ Ingredient logged!
+        </div>
+      )}
+
+      {/* Quick log form */}
+      {showLogForm && (
+        <Card elevated className="mb-8">
           <CardBody>
-            <form onSubmit={handleCustomLog} className="flex gap-3">
-              <div className="flex-1">
-                <Input
-                  placeholder="Ingredient name (e.g. Sodium Benzoate, Sulfites)"
-                  value={logName}
-                  onChange={(e) => setLogName(e.target.value)}
-                />
+            <form onSubmit={handleLogIngredient} className="space-y-4">
+              <Input
+                label="Ingredient Name"
+                placeholder="e.g. MSG, Soy Lecithin, Fragrance"
+                value={ingName}
+                onChange={(e) => setIngName(e.target.value)}
+                required
+              />
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-1.5">
+                  Category
+                </label>
+                <select
+                  className="w-full px-3 py-2.5 rounded-xl border border-border-light bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400"
+                  value={ingCategory}
+                  onChange={(e) => setIngCategory(e.target.value)}
+                >
+                  <option value="food">Food Ingredient</option>
+                  <option value="food-additive">Food Additive</option>
+                  <option value="personal-care">Personal Care</option>
+                  <option value="environmental">Environmental</option>
+                  <option value="medication">Medication</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
-              <Button type="submit" isLoading={submitting} disabled={!logName.trim()}>
-                Log
+              <Button type="submit" size="sm" fullWidth isLoading={submitting}>
+                Log Ingredient
               </Button>
             </form>
           </CardBody>
         </Card>
       )}
 
-      {/* Flare correlations */}
-      {flareCorrelations.length > 0 && (
-        <Card className="mb-8">
-          <CardBody>
-            <h2 className="text-lg font-semibold text-text-primary mb-3">🔥 Likely Trigger Ingredients</h2>
-            <p className="text-sm text-text-muted mb-4">Ingredients linked to your symptom flares</p>
-            <div className="space-y-3">
-              {flareCorrelations.map((fc: any) => (
-                <div key={fc.name} className="flex items-center justify-between py-2 border-b border-border-light last:border-0">
-                  <span className="font-medium text-text-primary text-sm">{fc.name}</span>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="severe">{fc.flare_count} flares</Badge>
-                    <Badge variant="moderate">avg {fc.avg_severity}/10</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Top logged ingredients */}
-      {topLogged.length > 0 && (
-        <Card className="mb-8">
-          <CardBody>
-            <h2 className="text-lg font-semibold text-text-primary mb-3">📊 Your Most Tracked Ingredients</h2>
-            <div className="flex flex-wrap gap-2">
-              {topLogged.map((t: any) => (
-                <Badge key={t.name} variant="brand" dot>
-                  {t.name} ({t.count}x)
-                </Badge>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Known ingredient database */}
-      <div>
-        <h2 className="text-lg font-semibold text-text-primary mb-3">Known MCAS-Triggering Ingredients</h2>
-        <Input
-          placeholder="Search ingredients..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-4"
-        />
-
-        {filtered.length === 0 ? (
-          <EmptyState title="No ingredients found" description="Try a different search term." />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((ing: any) => (
-              <Card key={ing.id}>
-                <CardBody>
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-medium text-text-primary text-sm">{ing.name}</h3>
-                    <Badge variant={ing.histamine_level === "high" ? "severe" : ing.histamine_level === "moderate" ? "moderate" : "mild"} dot>
-                      {ing.histamine_level}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-1.5 mb-2">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${categoryColors[ing.category] || categoryColors.other}`}>
-                      {ing.category.replace("-", " ")}
-                    </span>
-                  </div>
-                  {ing.common_in && (
-                    <p className="text-xs text-text-muted mb-2">
-                      Found in: {JSON.parse(ing.common_in).join(", ")}
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Left: Known ingredients database */}
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary mb-4">
+            Known Trigger Ingredients
+          </h2>
+          <Input
+            placeholder="Search ingredients..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="mb-4"
+          />
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            {filteredKnown.map((ing) => (
+              <Card key={ing.id} elevated className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-medium text-text-primary">
+                        {ing.name}
+                      </h4>
+                      <Badge
+                        variant={
+                          ing.histamine_level === "high"
+                            ? "brand"
+                            : ing.histamine_level === "moderate"
+                            ? "teal"
+                            : "default"
+                        }
+                        size="sm"
+                      >
+                        {ing.histamine_level}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-text-muted mt-1">
+                      <span className="font-medium">Found in:</span> {ing.common_in}
                     </p>
-                  )}
-                  <p className="text-xs text-text-secondary mb-3">{ing.notes}</p>
-                  <Button variant="ghost" size="sm" onClick={() => handleQuickLog(ing.name)} isLoading={submitting}>
-                    + Log exposure
-                  </Button>
-                </CardBody>
+                    {ing.notes && (
+                      <p className="text-xs text-text-secondary mt-1">
+                        {ing.notes}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => quickLog(ing.name, ing.category)}
+                    className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-brand-50 text-brand-600 hover:bg-brand-100 transition-colors"
+                  >
+                    + Log
+                  </button>
+                </div>
               </Card>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Right: Your tracked ingredients */}
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary mb-4">
+            Your Tracked Ingredients
+          </h2>
+
+          {history.ingredients.length === 0 ? (
+            <EmptyState
+              title="No ingredients tracked yet"
+              description="Log ingredients from the database on the left to start tracking your exposure."
+            />
+          ) : (
+            <>
+              {/* Top logged ingredients */}
+              {trends.topIngredients.length > 0 && (
+                <Card elevated className="mb-6">
+                  <CardBody>
+                    <h3 className="text-sm font-semibold text-text-primary mb-3">
+                      Most Logged
+                    </h3>
+                    <div className="space-y-2">
+                      {trends.topIngredients.slice(0, 8).map((ing) => (
+                        <div
+                          key={ing.name}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="text-text-secondary">{ing.name}</span>
+                          <Badge size="sm">{ing.count}×</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+
+              {/* Recent ingredient logs */}
+              <h3 className="text-sm font-semibold text-text-primary mb-3">
+                Recent Logs
+              </h3>
+              <div className="space-y-2">
+                {history.ingredients.slice(0, 20).map((ing) => (
+                  <div
+                    key={ing.id}
+                    className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-surface-alt/50 border border-border-light"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-text-primary">
+                        {ing.name}
+                      </span>
+                      <span className="text-xs text-text-muted ml-2">
+                        {ing.category}
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-muted">
+                      {new Date(ing.loggedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

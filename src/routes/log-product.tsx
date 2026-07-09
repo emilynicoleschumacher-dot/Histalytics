@@ -1,48 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getDb, getOrCreateDefaultUser } from "~/db/local";
 import { PageHeader } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-
-const logProduct = createServerFn({ method: "POST" }).handler(async (data: unknown) => {
-  const { productName, brand, productType, ingredients, notes } = data as any;
-  const db = getDb();
-  const userId = getOrCreateDefaultUser();
-  const result = db.query(`
-    INSERT INTO personal_care_logs (user_id, product_name, brand, product_type, ingredients, notes)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id, logged_at
-  `).get(userId, productName, brand ?? null, productType ?? "other", ingredients ?? null, notes ?? null);
-
-  // Auto-log ingredients
-  if (ingredients) {
-    const ingList = ingredients.split(",").map((i: string) => i.trim()).filter(Boolean);
-    for (const ing of ingList) {
-      db.query(`
-        INSERT INTO ingredient_logs (user_id, name, category, source_type, source_id, notes)
-        VALUES ($1, $2, 'personal-care', 'product', $3, $4)
-      `).run(userId, ing, (result as any)?.id, `From: ${productName}`);
-    }
-  }
-  return result;
-});
-
-const getKnownIngredients = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getDb();
-  const rows = db.query("SELECT id, name, category, histamine_level FROM known_ingredients ORDER BY name LIMIT 10").all();
-  return rows;
-});
+import { logPersonalCareProduct } from "~/lib/data-store";
 
 export const Route = createFileRoute("/log-product")({
-  loader: () => getKnownIngredients(),
   component: LogProduct,
 });
 
 function LogProduct() {
-  const knownIngredients = Route.useLoaderData() as any[];
   const [productName, setProductName] = useState("");
   const [brand, setBrand] = useState("");
   const [productType, setProductType] = useState("");
@@ -55,12 +23,12 @@ function LogProduct() {
     e.preventDefault();
     if (!productName.trim()) return;
     setSubmitting(true);
-    await logProduct({
+    logPersonalCareProduct({
       productName: productName.trim(),
-      brand: brand.trim() || null,
-      productType: productType || null,
-      ingredients: ingredients.trim() || null,
-      notes: notes.trim() || null,
+      brand: brand || null,
+      productType: productType || "other",
+      ingredients: ingredients || null,
+      notes: notes || null,
     });
     setSubmitting(false);
     setSuccess(true);
@@ -77,86 +45,99 @@ function LogProduct() {
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader
-        title="Log Product"
-        description="Track personal care products and their ingredients"
+        title="Log Personal Care Product"
+        description="Track skincare, toiletries, and household products for ingredient triggers."
       />
 
       {success && (
         <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Product logged! Ingredients auto-tracked for flare correlation.
+          ✓ Product logged successfully!
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
           label="Product Name"
-          placeholder="e.g. Vanicream Moisturizing Cream"
+          placeholder="e.g. Cetaphil Gentle Skin Cleanser"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
           required
         />
 
-        <Input
-          label="Brand"
-          placeholder="e.g. Vanicream, CeraVe, La Roche-Posay"
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-        />
-
-        <Select
-          label="Product Type"
-          placeholder="Select type..."
-          options={[
-            { value: "skincare", label: "Skincare" },
-            { value: "haircare", label: "Haircare" },
-            { value: "oral-care", label: "Oral Care" },
-            { value: "makeup", label: "Makeup" },
-            { value: "fragrance", label: "Fragrance" },
-            { value: "cleaning", label: "Cleaning" },
-            { value: "other", label: "Other" },
-          ]}
-          value={productType}
-          onChange={(e) => setProductType(e.target.value)}
-        />
-
-        <div>
-          <Textarea
-            label="Ingredients List (comma-separated)"
-            placeholder="e.g. Water, Glycerin, Ceramide NP, Ceramide AP, Ceramide EOP"
-            value={ingredients}
-            onChange={(e) => setIngredients(e.target.value)}
-            helperText="Each ingredient will be tracked individually for flare correlation"
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Brand"
+            placeholder="e.g. Cetaphil, CeraVe, Vanicream"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
           />
-          {knownIngredients.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs text-text-muted mb-1">Common MCAS-triggering ingredients:</p>
-              <div className="flex flex-wrap gap-1">
-                {knownIngredients.slice(0, 8).map((ing: any) => (
-                  <button
-                    key={ing.id}
-                    type="button"
-                    onClick={() => setIngredients((prev) => (prev ? `${prev}, ${ing.name}` : ing.name))}
-                    className="text-xs px-2 py-0.5 rounded-full bg-coral-50 text-coral-600 border border-coral-200 hover:bg-coral-100"
-                  >
-                    {ing.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <Select
+            label="Product Type"
+            placeholder="Select type..."
+            options={[
+              { value: "skincare", label: "Skincare" },
+              { value: "haircare", label: "Haircare" },
+              { value: "body-wash", label: "Body Wash / Soap" },
+              { value: "oral-care", label: "Oral Care" },
+              { value: "makeup", label: "Makeup" },
+              { value: "fragrance", label: "Fragrance" },
+              { value: "household", label: "Household Cleaner" },
+              { value: "laundry", label: "Laundry" },
+              { value: "other", label: "Other" },
+            ]}
+            value={productType}
+            onChange={(e) => setProductType(e.target.value)}
+          />
         </div>
 
         <Textarea
+          label="Ingredients List"
+          placeholder="Paste the full ingredients list from the label. This helps us identify trigger ingredients."
+          value={ingredients}
+          onChange={(e) => setIngredients(e.target.value)}
+          helperText="Separate ingredients with commas. The more detail, the better your trigger analysis."
+        />
+
+        <Textarea
           label="Notes"
-          placeholder="Any reactions or observations..."
+          placeholder="Any reaction after using this product? How did your skin feel?"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <Button type="submit" size="lg" fullWidth isLoading={submitting} disabled={!productName.trim()}>
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          isLoading={submitting}
+          disabled={!productName.trim()}
+        >
           Log Product
         </Button>
       </form>
+
+      {/* Quick-reference: Common MCAS-triggering ingredients */}
+      <Card elevated className="mt-10">
+        <CardBody>
+          <h3 className="text-sm font-semibold text-text-primary mb-3">
+            Common trigger ingredients to watch for
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {["Fragrance / Parfum", "Essential Oils", "SLS", "Parabens", "Phthalates", "Propylene Glycol", "Formaldehyde Releasers", "Sulfates", "Alcohol Denat."].map((ing) => (
+              <button
+                key={ing}
+                type="button"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                onClick={() => {
+                  setIngredients((prev) => (prev ? `${prev}, ${ing}` : ing));
+                }}
+              >
+                + {ing}
+              </button>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

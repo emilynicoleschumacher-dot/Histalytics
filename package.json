@@ -1,14 +1,13 @@
 {
-  "name": "team-site-template",
+  "name": "histalytics",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "bun run serve.ts",
+    "preview": "vite preview",
     "publish": "bash ./publish.sh",
-    "go-live": "bash ./go-live.sh",
     "format": "prettier --write .",
     "build:mobile": "vite build && npx cap copy"
   },
@@ -17,11 +16,7 @@
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/ios": "^8.4.1",
-    "@clerk/clerk-react": "^5.61.8",
-    "@clerk/tanstack-start": "^0.11.5",
-    "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-router": "^1.158.1",
-    "@tanstack/react-start": "^1.158.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

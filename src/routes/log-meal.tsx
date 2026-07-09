@@ -1,34 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getDb, getOrCreateDefaultUser } from "~/db/local";
 import { PageHeader } from "~/components/shared";
 import { Card, CardBody, CardHeader } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
 import { IngredientInput } from "~/components/IngredientInput";
-
-const logMeal = createServerFn({ method: "POST" }).handler(async (data: unknown) => {
-  const { foodName, mealType, portionSize, notes, ingredients } = data as any;
-  const db = getDb();
-  const userId = getOrCreateDefaultUser();
-  const result = db.query(`
-    INSERT INTO meal_logs (user_id, food_name, meal_type, portion_size, notes)
-    VALUES ($1, $2, $3, $4, $5)
-  `).run(userId, foodName, mealType ?? null, portionSize ?? null, notes ?? null);
-
-  // Log each ingredient
-  if (ingredients && Array.isArray(ingredients)) {
-    for (const ing of ingredients) {
-      db.query(`
-        INSERT INTO meal_ingredients (meal_id, ingredient_name)
-        VALUES ($1, $2)
-      `).run(result.lastInsertRowid, ing);
-    }
-  }
-
-  return { success: true };
-});
+import { logMeal } from "~/lib/data-store";
 
 export const Route = createFileRoute("/log-meal")({
   component: LogMeal,
@@ -52,7 +29,6 @@ function LogMeal() {
       foodName: foodName.trim(),
       mealType: mealType || null,
       portionSize: portionSize || null,
-      ingredients,
       notes: notes || null,
     });
     setSubmitting(false);
