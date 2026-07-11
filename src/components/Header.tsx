@@ -311,7 +311,7 @@ export function Header() {
                 <UserButton afterSignOutUrl="/" />
               </SignedIn>
               <SignedOut>
-                <SignInButton mode="modal">
+                <SignInButton mode="modal" afterSignInUrl="/dashboard">
                   <button className="ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all text-text-muted hover:text-brand-600 hover:bg-brand-50">
                     {icons.profile}
                   </button>
@@ -388,7 +388,7 @@ export function Header() {
                   </div>
                 </SignedIn>
                 <SignedOut>
-                  <SignInButton mode="modal">
+                  <SignInButton mode="modal" afterSignInUrl="/dashboard">
                     <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-brand-600 hover:bg-brand-50/50 transition-colors">
                       {icons.profile}
                       Sign In

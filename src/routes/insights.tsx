@@ -23,7 +23,6 @@ import {
   getIngredientCorrelations,
   getCombinedTimeline,
   getActivityLevelCorrelation,
-  seedDemoData,
   type InsightStats,
   type TrendDayPoint,
   type FlareDayItem,
@@ -82,25 +81,17 @@ function InsightsPage() {
     stats, trendData, flareData, flareCount, totalDays, dayOfWeekData,
     correlations, timelineEntries, activityCorrelation, timeRange, setTimeRange, loading,
   } = useInsightData();
-  const [demoSeeded, setDemoSeeded] = useState(false);
 
   const hasAnyData = stats.symptomsLogged > 0 || stats.daysTracked > 0;
 
   return (
     <div className="container-narrow py-8">
       <PageHeader title="My Insights" description="Personal analytics based on your logs — understand your patterns over time.">
-        {!hasAnyData && !demoSeeded && (
-          <Button variant="outline" size="sm" onClick={() => { seedDemoData(); setDemoSeeded(true); }}>
-            Load Demo Data
-          </Button>
+        {!hasAnyData && (
+          <p className="text-sm text-text-muted">Log symptoms and meals to see your insights here.</p>
         )}
         <Link to="/history"><Button variant="outline" size="sm">View History</Button></Link>
       </PageHeader>
-      {demoSeeded && (
-        <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Demo data loaded! 14 days of realistic symptom, meal, and ingredient logs added.
-        </div>
-      )}
 
       <DisclaimerBanner />
 
