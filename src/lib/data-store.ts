@@ -897,7 +897,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
 
 /* ══════════════════════════════════════════
    Activity Level Correlation
-   ══════════════════════════����═══════════════ */
+   ══════════════════════════�����═══════════════ */
 
 export interface ActivityLevelCorrelation {
   level: string;
@@ -1015,7 +1015,7 @@ export function seedDemoData(): void {
       }
     } else if (isGoodDay) {
       // Good day — just 1-2 mild symptoms
-      const mild = ["Skin flushing", "Bloating"];
+      const mild = ["Flushing", "Bloating / Gas"];
       for (const name of mild) {
         const tpl = symptomTemplates.find((t) => t.name === name)!;
         symptomLogs.push({
