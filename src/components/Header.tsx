@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -52,9 +52,19 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
     </svg>
   ),
-community: (
+  supplement: (
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 6.5c0-2.485-2.099-4.5-4.688-4.5a4.688 4.688 0 00-2.812.94 4.688 4.688 0 00-2.812-.94C4.599 2 2.5 4.015 2.5 6.5 2.5 10.75 9 17 12 20c3-3 9.5-9.25 9.5-13.5zM12 20l-3.5-5.5M8 9l2 2 4-4" />
+    </svg>
+  ),
+  community: (
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+    </svg>
+  ),
+  chevronDown: (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
     </svg>
   ),
 };
@@ -65,17 +75,159 @@ const insightsIcon = (
   </svg>
 );
 
-const navConfig = [
+interface NavLink {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface NavDropdown {
+  type: "dropdown";
+  label: string;
+  icon: React.ReactNode;
+  children: NavLink[];
+}
+
+type NavItem = NavLink | NavDropdown;
+
+const logChildren: NavLink[] = [
+  { path: "/log-symptom", label: "Log Symptom", icon: icons.plus },
+  { path: "/log-meal", label: "Log Meal", icon: icons.meal },
+  { path: "/log-product", label: "Log Product", icon: icons.product },
+  { path: "/log-supplement", label: "Log Supplement", icon: icons.supplement },
+];
+
+const navConfig: NavItem[] = [
   { path: "/dashboard", label: "Dashboard", icon: icons.dashboard },
-  { path: "/log-symptom", label: "Log", icon: icons.plus },
-  { path: "/log-meal", label: "Meals", icon: icons.meal },
-  { path: "/log-product", label: "Products", icon: icons.product },
-  { path: "/log-supplement", label: "Supplements", icon: icons.product },
+  { type: "dropdown", label: "Log", icon: icons.plus, children: logChildren },
   { path: "/insights", label: "Insights", icon: insightsIcon },
   { path: "/recommendations", label: "Products", icon: icons.lightbulb },
   { path: "/history", label: "History", icon: icons.calendar },
   { path: "/community", label: "Community", icon: icons.community },
 ];
+
+function isDropdown(item: NavItem): item is NavDropdown {
+  return "type" in item && item.type === "dropdown";
+}
+
+function isActivePath(path: string, currentPath: string): boolean {
+  return currentPath === path;
+}
+
+function anyChildActive(children: NavLink[], currentPath: string): boolean {
+  return children.some((c) => currentPath === c.path);
+}
+
+/* ── Desktop Dropdown ── */
+function DesktopDropdown({ item, currentPath }: { item: NavDropdown; currentPath: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const anyActive = anyChildActive(item.children, currentPath);
+
+  return (
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          anyActive
+            ? "text-brand-600 bg-brand-50"
+            : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+        }`}
+      >
+        {item.icon}
+        {item.label}
+        <span className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
+          {icons.chevronDown}
+        </span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-56 rounded-xl border border-border-light bg-white shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+          {item.children.map((child) => (
+            <Link
+              key={child.path}
+              to={child.path}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                isActivePath(child.path, currentPath)
+                  ? "text-brand-600 bg-brand-50"
+                  : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+              }`}
+            >
+              <span className="shrink-0">{child.icon}</span>
+              {child.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Mobile Expandable Submenu ── */
+function MobileDropdown({
+  item,
+  currentPath,
+  onClose,
+}: {
+  item: NavDropdown;
+  currentPath: string;
+  onClose: () => void;
+}) {
+  const [expanded, setExpanded] = useState(() => anyChildActive(item.children, currentPath));
+
+  const anyActive = anyChildActive(item.children, currentPath);
+
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          anyActive
+            ? "text-brand-600 bg-brand-50"
+            : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+        }`}
+      >
+        <span className="flex items-center gap-3">
+          {item.icon}
+          {item.label}
+        </span>
+        <span className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>
+          {icons.chevronDown}
+        </span>
+      </button>
+      {expanded && (
+        <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-brand-100 pl-3">
+          {item.children.map((child) => (
+            <Link
+              key={child.path}
+              to={child.path}
+              onClick={onClose}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActivePath(child.path, currentPath)
+                  ? "text-brand-600 bg-brand-50"
+                  : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+              }`}
+            >
+              <span className="shrink-0">{child.icon}</span>
+              {child.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const location = useLocation();
@@ -88,7 +240,6 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const isActive = (path: string) => location.pathname === path;
   const isHome = location.pathname === "/";
 
   return (
@@ -136,24 +287,28 @@ export function Header() {
           >
             Home
           </Link>
-          {navConfig.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                isActive(item.path)
-                  ? "text-brand-600 bg-brand-50"
-                  : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          {navConfig.map((item) =>
+            isDropdown(item) ? (
+              <DesktopDropdown key={item.label} item={item} currentPath={location.pathname} />
+            ) : (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isActivePath(item.path, location.pathname)
+                    ? "text-brand-600 bg-brand-50"
+                    : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            )
+          )}
           <Link
             to="/profile"
             className={`ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all ${
-              isActive("/profile")
+              isActivePath("/profile", location.pathname)
                 ? "bg-brand-100 text-brand-600"
                 : "text-text-muted hover:text-brand-600 hover:bg-brand-50"
             }`}
@@ -196,27 +351,36 @@ export function Header() {
               {icons.home}
               Home
             </Link>
-            {navConfig.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive(item.path)
-                    ? "text-brand-600 bg-brand-50"
-                    : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            ))}
+            {navConfig.map((item) =>
+              isDropdown(item) ? (
+                <MobileDropdown
+                  key={item.label}
+                  item={item}
+                  currentPath={location.pathname}
+                  onClose={() => setMobileMenuOpen(false)}
+                />
+              ) : (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    isActivePath(item.path, location.pathname)
+                      ? "text-brand-600 bg-brand-50"
+                      : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              )
+            )}
             <div className="border-t border-border-light pt-1 mt-1">
               <Link
                 to="/profile"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive("/profile")
+                  isActivePath("/profile", location.pathname)
                     ? "text-brand-600 bg-brand-50"
                     : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
                 }`}
