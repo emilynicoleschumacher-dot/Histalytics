@@ -54,7 +54,7 @@ const icons = {
   ),
   supplement: (
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 6.5c0-2.485-2.099-4.5-4.688-4.5a4.688 4.688 0 00-2.812.94 4.688 4.688 0 00-2.812-.94C4.599 2 2.5 4.015 2.5 6.5 2.5 10.75 9 17 12 20c3-3 9.5-9.25 9.5-13.5zM12 20l-3.5-5.5M8 9l2 2 4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2-10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6a4 4 0 014-4h10zM7 4a2 2 0 012-2h6a2 2 0 012 2v2H7V4z" />
     </svg>
   ),
   community: (
