@@ -3,8 +3,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/early-access.ts": {
-      "runtime": "nodejs22.x"
+    "api/*.ts": {
+      "runtime": "@vercel/node@3"
     }
   },
   "rewrites": [
