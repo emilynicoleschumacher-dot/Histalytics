@@ -213,7 +213,7 @@ function InsightsPage() {
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-text-primary">Ingredient Correlations</h2>
                 <Badge variant="teal" dot>New</Badge>
-                <InfoTooltip text="Correlation means these ingredients were often present on days when your symptom severity was high — not that one caused the other." />
+                <InfoTooltip text="Correlation means these ingredients were often present on days when your symptom severity was high — not that one caused the other. Use this to identify ingredients to discuss with your provider." />
               </div>
             </CardHeader>
             <CardBody>
