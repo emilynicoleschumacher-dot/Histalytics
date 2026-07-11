@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useUser } from "@clerk/clerk-react";
 import { Card, CardBody, CardHeader } from "~/components/Card";
 import { PageHeader } from "~/components/shared";
 
@@ -7,6 +8,13 @@ export const Route = createFileRoute("/profile")({
 });
 
 function Profile() {
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  const displayName = user?.fullName || user?.username || user?.primaryEmailAddress?.emailAddress || "Guest";
+  const email = user?.primaryEmailAddress?.emailAddress || "";
+  const avatarUrl = user?.imageUrl;
+  const initials = (displayName.charAt(0) || "?").toUpperCase();
+
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader title="Profile" description="Your account and preferences" />
@@ -16,29 +24,53 @@ function Profile() {
           <h2 className="text-lg font-semibold text-text-primary">Account</h2>
         </CardHeader>
         <CardBody>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-teal-400 flex items-center justify-center text-white text-2xl font-bold">
-              U
+          {!isLoaded ? (
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-100 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-5 w-32 bg-brand-100 rounded animate-pulse" />
+                <div className="h-4 w-48 bg-brand-100 rounded animate-pulse" />
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-text-primary text-lg">Demo User</p>
-              <p className="text-sm text-text-muted">MCAS Symptom Tracker</p>
+          ) : !isSignedIn ? (
+            <div className="text-center py-4">
+              <p className="text-text-muted text-sm">Sign in to view your profile</p>
             </div>
-          </div>
-          <div className="space-y-4 text-sm text-text-secondary">
-            <p className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              Data is stored locally in SQLite
-            </p>
-            <p className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-400" />
-              Symptom knowledge base loaded from shared research
-            </p>
-            <p className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-teal-400" />
-              Product recommendations loading from database
-            </p>
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4 mb-6">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-brand-200"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-teal-400 flex items-center justify-center text-white text-2xl font-bold">
+                    {initials}
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-text-primary text-lg">{displayName}</p>
+                  {email && <p className="text-sm text-text-muted">{email}</p>}
+                </div>
+              </div>
+              <div className="space-y-4 text-sm text-text-secondary">
+                <p className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  Signed in with Clerk
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-brand-400" />
+                  Symptom knowledge base loaded from shared research
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-teal-400" />
+                  Logged data stored in your browser (localStorage)
+                </p>
+              </div>
+            </>
+          )}
         </CardBody>
       </Card>
 
@@ -57,7 +89,7 @@ function Profile() {
               Built by the Histalytics team — a collaborative effort between research, design, and engineering.
             </p>
             <p className="mt-2 text-xs text-text-muted">
-              Version 0.1.0 · Built with TanStack Start, React, Tailwind CSS, and SQLite
+              Version 0.1.0 · Built with React, Tailwind CSS, and Clerk Auth
             </p>
           </div>
         </CardBody>
