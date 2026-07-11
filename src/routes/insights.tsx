@@ -226,12 +226,12 @@ function InsightsPage() {
                 <>
                   <p className="text-sm text-text-muted mb-5">
                     Ingredients ranked by how often they appear on your flare days.
-                    <span className="ml-1 inline-flex items-center gap-2">
-                      <span className="text-coral-500 font-medium">Red</span> = frequent companion,
-                      <span className="text-amber-500 font-medium">Amber</span> = often present,
-                      <span className="text-brand-300 font-medium">Gray</span> = low correlation
-                    </span>
                   </p>
+                  <div className="flex flex-wrap items-center gap-2 mb-5 text-xs sm:text-sm text-text-muted">
+                    <span className="text-coral-500 font-medium">Red</span> = frequent companion,
+                    <span className="text-amber-500 font-medium">Amber</span> = often present,
+                    <span className="text-brand-300 font-medium">Gray</span> = low correlation
+                  </div>
                   <div className="space-y-3">
                     {correlations.map((item) => (
                       <CorrelationBar key={item.ingredientName} item={item} />
@@ -251,16 +251,16 @@ function InsightsPage() {
           {/* ── Section 6: Combined Timeline ── */}
           <Card elevated className="mb-8">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-semibold text-text-primary">Combined Timeline</h2>
                   <InfoTooltip text="Your symptoms, meals, products, and supplements in one chronological view." />
                 </div>
-                <div className="flex items-center gap-3 text-xs text-text-muted">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral-400" /> Symptom</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400" /> Meal</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-brand-400" /> Product</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Supplement</span>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-text-muted justify-end">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral-400 shrink-0" /> Symptom</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 shrink-0" /> Meal</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-brand-400 shrink-0" /> Product</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" /> Supplement</span>
                 </div>
               </div>
             </CardHeader>
