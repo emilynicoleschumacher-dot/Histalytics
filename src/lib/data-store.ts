@@ -897,7 +897,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
 
 /* ══════════════════════════════════════════
    Activity Level Correlation
-   ══════════════════════════��═══════════════ */
+   ══════════════════════════����═══════════════ */
 
 export interface ActivityLevelCorrelation {
   level: string;
@@ -952,14 +952,14 @@ export function seedDemoData(): void {
   const day = 86_400_000; // ms in one day
 
   const symptomTemplates = [
-    { id: "s1", name: "Headache", system: "Nervous System", baseSeverity: 6 },
-    { id: "s2", name: "Fatigue", system: "General", baseSeverity: 7 },
-    { id: "s3", name: "Brain Fog", system: "Nervous System", baseSeverity: 5 },
-    { id: "s4", name: "Nausea", system: "Digestive", baseSeverity: 4 },
-    { id: "s5", name: "Skin flushing", system: "Skin", baseSeverity: 5 },
-    { id: "s6", name: "Joint pain", system: "Musculoskeletal", baseSeverity: 4 },
-    { id: "s7", name: "Bloating", system: "Digestive", baseSeverity: 3 },
-    { id: "s8", name: "Anxiety", system: "Nervous System", baseSeverity: 5 },
+    { id: "neuro-002", name: "Headache / Migraine", system: "Nervous System", baseSeverity: 6 },
+    { id: "msk-003", name: "Fatigue / Chronic fatigue", system: "Musculoskeletal", baseSeverity: 7 },
+    { id: "neuro-001", name: "Brain fog", system: "Nervous System", baseSeverity: 5 },
+    { id: "gi-004", name: "Nausea / Vomiting", system: "Digestive", baseSeverity: 4 },
+    { id: "derm-001", name: "Flushing", system: "Skin", baseSeverity: 5 },
+    { id: "msk-001", name: "Joint pain / Arthritis", system: "Musculoskeletal", baseSeverity: 4 },
+    { id: "gi-002", name: "Bloating / Gas", system: "Digestive", baseSeverity: 3 },
+    { id: "neuro-004", name: "Anxiety / Panic attacks", system: "Nervous System", baseSeverity: 5 },
   ];
 
   const mealTemplates = [
@@ -1001,7 +1001,7 @@ export function seedDemoData(): void {
           loggedAt: new Date(date.getTime() + 8 * 3600_000 + Math.random() * 12 * 3600_000).toISOString(),
         });
         // Also log ingredient link for specific triggers
-        if (tpl.name === "Headache" || tpl.name === "Fatigue") {
+        if (tpl.id === "neuro-002" || tpl.id === "msk-003") {
           ingredientLogs.push({
             id: `demo-ing-${d}-${tpl.id}`,
             name: "Aged cheddar",
