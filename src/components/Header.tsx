@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
+import { useUser, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -310,16 +311,16 @@ export function Header() {
               </Link>
             )
           )}
-          <Link
-            to="/profile"
-            className={`ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all ${
-              isActivePath("/profile", location.pathname)
-                ? "bg-brand-100 text-brand-600"
-                : "text-text-muted hover:text-brand-600 hover:bg-brand-50"
-            }`}
-          >
-            {icons.profile}
-          </Link>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all text-text-muted hover:text-brand-600 hover:bg-brand-50">
+                {icons.profile}
+              </button>
+            </SignInButton>
+          </SignedOut>
         </nav>
 
         {/* Mobile hamburger */}
