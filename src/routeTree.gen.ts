@@ -14,12 +14,17 @@ import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LogSymptomRouteImport } from './routes/log-symptom'
+import { Route as LogSupplementRouteImport } from './routes/log-supplement'
 import { Route as LogProductRouteImport } from './routes/log-product'
 import { Route as LogMealRouteImport } from './routes/log-meal'
 import { Route as IngredientsRouteImport } from './routes/ingredients'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CommunityNewRouteImport } from './routes/community.new'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as CommunityIdRouteImport } from './routes/community.$id'
 
 const TriggerIngredientsRoute = TriggerIngredientsRouteImport.update({
   id: '/trigger-ingredients',
@@ -51,6 +56,11 @@ const LogProductRoute = LogProductRouteImport.update({
   path: '/log-product',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogSupplementRoute = LogSupplementRouteImport.update({
+  id: '/log-supplement',
+  path: '/log-supplement',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogMealRoute = LogMealRouteImport.update({
   id: '/log-meal',
   path: '/log-meal',
@@ -66,6 +76,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -76,11 +91,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityIdRoute = CommunityIdRouteImport.update({
+  id: '/community/$id',
+  path: '/community/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityNewRoute = CommunityNewRouteImport.update({
+  id: '/community/new',
+  path: '/community/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/community': typeof CommunityRoute
+  '/community/new': typeof CommunityNewRoute
+  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/insights': typeof InsightsRoute
   '/ingredients': typeof IngredientsRoute
   '/log-meal': typeof LogMealRoute
   '/log-product': typeof LogProductRoute
@@ -92,8 +126,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/community': typeof CommunityRoute
+  '/community/new': typeof CommunityNewRoute
+  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/insights': typeof InsightsRoute
   '/ingredients': typeof IngredientsRoute
   '/log-meal': typeof LogMealRoute
   '/log-product': typeof LogProductRoute
@@ -106,8 +144,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/community': typeof CommunityRoute
+  '/community/new': typeof CommunityNewRoute
+  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/insights': typeof InsightsRoute
   '/ingredients': typeof IngredientsRoute
   '/log-meal': typeof LogMealRoute
   '/log-product': typeof LogProductRoute
@@ -121,11 +163,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/community'
+    | '/community/new'
+    | '/community/$id'
     | '/dashboard'
     | '/history'
+    | '/insights'
     | '/ingredients'
     | '/log-meal'
     | '/log-product'
+    | '/log-supplement'
     | '/log-symptom'
     | '/pricing'
     | '/profile'
@@ -134,11 +181,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/community'
+    | '/community/new'
+    | '/community/$id'
     | '/dashboard'
     | '/history'
+    | '/insights'
     | '/ingredients'
     | '/log-meal'
     | '/log-product'
+    | '/log-supplement'
     | '/log-symptom'
     | '/pricing'
     | '/profile'
@@ -147,11 +199,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/community'
+    | '/community/new'
+    | '/community/$id'
     | '/dashboard'
     | '/history'
+    | '/insights'
     | '/ingredients'
     | '/log-meal'
     | '/log-product'
+    | '/log-supplement'
     | '/log-symptom'
     | '/pricing'
     | '/profile'
@@ -161,11 +218,16 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CommunityNewRoute: typeof CommunityNewRoute
+  CommunityRoute: typeof CommunityRoute
+  CommunityIdRoute: typeof CommunityIdRoute
   DashboardRoute: typeof DashboardRoute
   HistoryRoute: typeof HistoryRoute
+  InsightsRoute: typeof InsightsRoute
   IngredientsRoute: typeof IngredientsRoute
   LogMealRoute: typeof LogMealRoute
   LogProductRoute: typeof LogProductRoute
+  LogSupplementRoute: typeof LogSupplementRoute
   LogSymptomRoute: typeof LogSymptomRoute
   PricingRoute: typeof PricingRoute
   ProfileRoute: typeof ProfileRoute
@@ -180,6 +242,27 @@ declare module '@tanstack/react-router' {
       path: '/trigger-ingredients'
       fullPath: '/trigger-ingredients'
       preLoaderRoute: typeof TriggerIngredientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/new': {
+      id: '/community/new'
+      path: '/community/new'
+      fullPath: '/community/new'
+      preLoaderRoute: typeof CommunityNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/$id': {
+      id: '/community/$id'
+      path: '/community/$id'
+      fullPath: '/community/$id'
+      preLoaderRoute: typeof CommunityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recommendations': {
@@ -217,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogProductRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log-supplement': {
+      id: '/log-supplement'
+      path: '/log-supplement'
+      fullPath: '/log-supplement'
+      preLoaderRoute: typeof LogSupplementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/log-meal': {
       id: '/log-meal'
       path: '/log-meal'
@@ -245,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -257,11 +354,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CommunityNewRoute: CommunityNewRoute,
+  CommunityRoute: CommunityRoute,
+  CommunityIdRoute: CommunityIdRoute,
   DashboardRoute: DashboardRoute,
   HistoryRoute: HistoryRoute,
+  InsightsRoute: InsightsRoute,
   IngredientsRoute: IngredientsRoute,
   LogMealRoute: LogMealRoute,
   LogProductRoute: LogProductRoute,
+  LogSupplementRoute: LogSupplementRoute,
   LogSymptomRoute: LogSymptomRoute,
   PricingRoute: PricingRoute,
   ProfileRoute: ProfileRoute,
@@ -271,12 +373,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

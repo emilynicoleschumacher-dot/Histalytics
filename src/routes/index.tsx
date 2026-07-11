@@ -170,7 +170,7 @@ function Home() {
                     <span className="text-text-primary font-medium">
                       Flare severity
                     </span>
-                    <span className="text-text-muted ml-auto">↓ 40%</span>
+                    <span className="text-text-muted ml-auto">40%</span>
                   </div>
                   <div className="mt-2 h-1.5 rounded-full bg-green-100">
                     <div className="h-1.5 rounded-full bg-green-400 w-[60%]" />

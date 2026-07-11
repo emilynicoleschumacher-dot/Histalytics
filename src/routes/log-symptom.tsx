@@ -3,7 +3,8 @@ import { useState } from "react";
 import { PageHeader, SeveritySlider } from "~/components/shared";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-import { getSymptomSystems, logSymptom } from "~/lib/data-store";
+import { getSymptomSystems, logSymptom, type ActivityLevel } from "~/lib/data-store";
+import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
 
 export const Route = createFileRoute("/log-symptom")({
   component: LogSymptom,
@@ -16,6 +17,7 @@ function LogSymptom() {
   const [selectedSymptom, setSelectedSymptom] = useState("");
   const [severity, setSeverity] = useState(5);
   const [duration, setDuration] = useState("");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -33,6 +35,7 @@ function LogSymptom() {
       bodySystem: selectedSystem,
       severity,
       durationMinutes: duration ? parseInt(duration) : null,
+      activityLevel,
       notes: notes || null,
     });
     setSubmitting(false);
@@ -86,7 +89,7 @@ function LogSymptom() {
         />
 
         <Input
-          label="Duration (minutes)"
+          label="Duration"
           type="number"
           placeholder="e.g. 60"
           value={duration}
@@ -99,6 +102,11 @@ function LogSymptom() {
           placeholder="Any additional details about this flare..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+        />
+
+        <ActivityLevelToggle
+          value={activityLevel}
+          onChange={setActivityLevel}
         />
 
         <Button

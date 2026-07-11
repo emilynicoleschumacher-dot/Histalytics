@@ -5,7 +5,8 @@ import { Card, CardBody, CardHeader } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
 import { IngredientInput } from "~/components/IngredientInput";
-import { logMeal } from "~/lib/data-store";
+import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
+import { logMeal, type ActivityLevel } from "~/lib/data-store";
 
 export const Route = createFileRoute("/log-meal")({
   component: LogMeal,
@@ -17,6 +18,7 @@ function LogMeal() {
   const [mealType, setMealType] = useState("");
   const [portionSize, setPortionSize] = useState("");
   const [ingredients, setIngredients] = useState<string[]>([]);
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,6 +31,8 @@ function LogMeal() {
       foodName: foodName.trim(),
       mealType: mealType || null,
       portionSize: portionSize || null,
+      ingredients: ingredients.length > 0 ? ingredients : null,
+      activityLevel,
       notes: notes || null,
     });
     setSubmitting(false);
@@ -121,6 +125,11 @@ function LogMeal() {
             />
           </CardBody>
         </Card>
+
+        <ActivityLevelToggle
+          value={activityLevel}
+          onChange={setActivityLevel}
+        />
 
         <Textarea
           label="Notes"

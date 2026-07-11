@@ -24,6 +24,12 @@ const recentMeals = [
   { name: "Aged cheese", ingredients: ["Aged cheddar", "Salt"], time: "Snack", trigger: true },
 ];
 
+const recentSupplements = [
+  { name: "Vitamin D3", brand: "Pure Encapsulations", dosage: "2000 IU", time: "Today", trigger: false },
+  { name: "Quercetin", brand: "NOW Foods", dosage: "500mg", time: "Yesterday", trigger: false },
+  { name: "DAO Enzyme", brand: "Seeking Health", dosage: "1 capsule", time: "2 days ago", trigger: false },
+];
+
 // Mock ingredient trend data
 const ingredientTrends = [
   { name: "Aged cheese", correlationScore: 92, timesLogged: 6, avgSeverity: 7, isTrigger: true },
@@ -52,7 +58,7 @@ function Dashboard() {
           label="Today's Flare Severity"
           value="Moderate"
           trend="down"
-          trendLabel="↓ 20% from yesterday"
+          trendLabel="20% from yesterday"
           icon={
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -63,7 +69,7 @@ function Dashboard() {
           label="Symptoms Today"
           value="4"
           trend="down"
-          trendLabel="↓ 2 vs yesterday"
+          trendLabel="2 vs yesterday"
           icon={
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -74,7 +80,7 @@ function Dashboard() {
           label="Flare-free Days"
           value="3"
           trend="up"
-          trendLabel="↑ Streak active"
+          trendLabel="Streak active"
           icon={
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -189,6 +195,48 @@ function Dashboard() {
                       </span>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Recent supplements */}
+        <Card elevated className="lg:col-span-1">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-primary">
+                Recent Supplements
+              </h2>
+              <Link
+                to="/log-supplement"
+                className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+              >
+                Log supplement
+              </Link>
+            </div>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="divide-y divide-border-light">
+              {recentSupplements.map((sup) => (
+                <div
+                  key={sup.name}
+                  className="px-5 py-3.5 hover:bg-brand-50/30 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium text-text-primary truncate">
+                      {sup.name}
+                    </p>
+                    {sup.trigger && (
+                      <Badge variant="coral" dot>
+                        Trigger
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    {sup.brand} · {sup.dosage}
+                  </p>
+                  <p className="text-[11px] text-text-muted mt-0.5">{sup.time}</p>
                 </div>
               ))}
             </div>

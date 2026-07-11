@@ -8,6 +8,8 @@ import productsData from "~/data/products";
 
 /* ─── Types ─── */
 
+export type ActivityLevel = "low" | "medium" | "high" | null;
+
 export interface SymptomLog {
   id: string;
   symptomId: string;
@@ -15,6 +17,7 @@ export interface SymptomLog {
   bodySystem: string;
   severity: number;
   durationMinutes: number | null;
+  activityLevel: ActivityLevel;
   notes: string | null;
   loggedAt: string;
 }
@@ -24,6 +27,8 @@ export interface MealLog {
   foodName: string;
   mealType: string | null;
   portionSize: string | null;
+  ingredients: string[] | null;
+  activityLevel: ActivityLevel;
   notes: string | null;
   loggedAt: string;
 }
@@ -48,6 +53,16 @@ export interface ProductLog {
   loggedAt: string;
 }
 
+export interface SupplementLog {
+  id: string;
+  supplementName: string;
+  brand: string | null;
+  dosage: string | null;
+  ingredients: string | null;
+  notes: string | null;
+  loggedAt: string;
+}
+
 /* ─── Helpers ─── */
 
 function getStore<T>(key: string, fallback: T): T {
@@ -65,6 +80,29 @@ function setStore<T>(key: string, data: T): void {
 
 function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/* ─── Date helpers for insights ─── */
+
+/** Return the date as YYYY-MM-DD string (local timezone). */
+function toDateStr(iso: string): string {
+  // Use the date portion of the ISO string (already in ISO format, UTC)
+  return iso.slice(0, 10);
+}
+
+/** Get a date string for N days ago. */
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Check if a date string is within N days before today. */
+function isWithinDays(dateStr: string, n: number): boolean {
+  const d = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  return diffMs >= 0 && diffMs <= n * 24 * 60 * 60 * 1000;
 }
 
 /* ─── Symptom Knowledge Base ─── */
@@ -92,6 +130,7 @@ export function logSymptom(data: {
   bodySystem: string;
   severity: number;
   durationMinutes?: number | null;
+  activityLevel?: ActivityLevel;
   notes?: string | null;
 }): SymptomLog {
   const logs = getStore<SymptomLog[]>("symptom_logs", []);
@@ -102,6 +141,7 @@ export function logSymptom(data: {
     bodySystem: data.bodySystem,
     severity: data.severity,
     durationMinutes: data.durationMinutes ?? null,
+    activityLevel: data.activityLevel ?? null,
     notes: data.notes ?? null,
     loggedAt: new Date().toISOString(),
   };
@@ -114,12 +154,18 @@ export function getRecentSymptoms(limit = 50): SymptomLog[] {
   return getStore<SymptomLog[]>("symptom_logs", []).slice(0, limit);
 }
 
+export function getAllSymptoms(): SymptomLog[] {
+  return getStore<SymptomLog[]>("symptom_logs", []);
+}
+
 /* ─── Meal Logging ─── */
 
 export function logMeal(data: {
   foodName: string;
   mealType?: string | null;
   portionSize?: string | null;
+  ingredients?: string[] | null;
+  activityLevel?: ActivityLevel;
   notes?: string | null;
 }): MealLog {
   const logs = getStore<MealLog[]>("meal_logs", []);
@@ -128,16 +174,83 @@ export function logMeal(data: {
     foodName: data.foodName,
     mealType: data.mealType ?? null,
     portionSize: data.portionSize ?? null,
+    ingredients: data.ingredients ?? null,
+    activityLevel: data.activityLevel ?? null,
     notes: data.notes ?? null,
     loggedAt: new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("meal_logs", logs);
+
+  // Log each ingredient via the ingredient store
+  if (data.ingredients && data.ingredients.length > 0) {
+    for (const ing of data.ingredients) {
+      if (ing.trim()) {
+        logIngredient({
+          name: ing.trim(),
+          category: "food",
+          sourceType: "meal",
+          notes: `From: ${data.foodName}`,
+        });
+      }
+    }
+  }
+
   return entry;
 }
 
 export function getRecentMeals(limit = 50): MealLog[] {
   return getStore<MealLog[]>("meal_logs", []).slice(0, limit);
+}
+
+export function getAllMeals(): MealLog[] {
+  return getStore<MealLog[]>("meal_logs", []);
+}
+
+/* ─── Supplement Logging ─── */
+
+export function logSupplement(data: {
+  supplementName: string;
+  brand?: string | null;
+  dosage?: string | null;
+  ingredients?: string | null;
+  notes?: string | null;
+}): SupplementLog {
+  const logs = getStore<SupplementLog[]>("supplement_logs", []);
+  const entry: SupplementLog = {
+    id: generateId(),
+    supplementName: data.supplementName,
+    brand: data.brand ?? null,
+    dosage: data.dosage ?? null,
+    ingredients: data.ingredients ?? null,
+    notes: data.notes ?? null,
+    loggedAt: new Date().toISOString(),
+  };
+  logs.unshift(entry);
+  setStore("supplement_logs", logs);
+
+  // Also log individual ingredients from supplements
+  if (data.ingredients) {
+    const ingList = data.ingredients.split(",").map((i) => i.trim()).filter(Boolean);
+    for (const ing of ingList) {
+      logIngredient({
+        name: ing,
+        category: "supplement-additive",
+        sourceType: "supplement",
+        notes: `From supplement: ${data.supplementName}`,
+      });
+    }
+  }
+
+  return entry;
+}
+
+export function getRecentSupplements(limit = 50): SupplementLog[] {
+  return getStore<SupplementLog[]>("supplement_logs", []).slice(0, limit);
+}
+
+export function getAllSupplements(): SupplementLog[] {
+  return getStore<SupplementLog[]>("supplement_logs", []);
 }
 
 /* ─── Dashboard Stats ─── */
@@ -296,7 +409,7 @@ export const knownIngredients = getStore<{ id: string; name: string; category: s
   { id: "ing-009", name: "SLS (Sodium Lauryl Sulfate)", category: "personal-care", histamine_level: "low", common_in: "Shampoo, toothpaste, body wash", notes: "Can irritate sensitive skin and mucous membranes" },
   { id: "ing-010", name: "Phthalates", category: "personal-care", histamine_level: "moderate", common_in: "Fragranced products, plastics, nail polish", notes: "Endocrine disruptor, can trigger mast cells" },
   { id: "ing-011", name: "Parabens", category: "personal-care", histamine_level: "low", common_in: "Preservatives in cosmetics and skincare", notes: "Some patients react to preservatives" },
-  { id: "ing-012", name: "Formaldehyde Releasers", category: "personal-care", histamine_level: "moderate", common_in: "Nail polish, hair products, some skincare", notes: "Common preservatives that release formaldehyde" },
+  { id: "ing-012", name: "Formaldehyde Releasers", category: "personal-care", histamine_level: "moderate", common_in: "Nail products, some cosmetics", notes: "Can trigger contact dermatitis and mast cell activation" },
   { id: "ing-013", name: "Propylene Glycol", category: "personal-care", histamine_level: "low", common_in: "Skincare, medications, food", notes: "Can cause contact dermatitis in sensitive individuals" },
   { id: "ing-014", name: "Capsaicin", category: "food", histamine_level: "moderate", common_in: "Hot peppers, spicy foods, topical creams", notes: "Can trigger histamine release in sensitive individuals" },
   { id: "ing-015", name: "Cinnamon / Cassia", category: "food", histamine_level: "moderate", common_in: "Baked goods, teas, supplements", notes: "Common spice trigger" },
@@ -401,4 +514,433 @@ export function getIngredientTrends() {
       .slice(0, 20),
     frequentFlareIngredients: [],
   };
+}
+
+/* ══════════════════════════════════════════
+   Insights — Real Data Computations
+   ══════════════════════════════════════════ */
+
+type TimeRange = "7d" | "14d" | "30d";
+
+/** Number of days for a given time range label. */
+function timeRangeDays(range: TimeRange): number {
+  if (range === "7d") return 7;
+  if (range === "14d") return 14;
+  return 30;
+}
+
+/** Get data only within the time range. */
+function filterByRange<T extends { loggedAt: string }>(items: T[], range: TimeRange): T[] {
+  const days = timeRangeDays(range);
+  const cutoff = daysAgo(days);
+  return items.filter((i) => i.loggedAt.slice(0, 10) >= cutoff);
+}
+
+/* ── Section 1: Overview Stats ── */
+
+export interface InsightStats {
+  daysTracked: number;
+  symptomsLogged: number;
+  currentStreak: number;
+  avgSeverity7d: number;
+}
+
+export function getInsightStats(range: TimeRange): InsightStats {
+  const symptoms = filterByRange(getAllSymptoms(), range);
+  const meals = filterByRange(getAllMeals(), range);
+  const products = filterByRange(getStore<ProductLog[]>("product_logs", []), range);
+  const supplements = filterByRange(getAllSupplements(), range);
+
+  const days = timeRangeDays(range);
+
+  // Days tracked — unique days with at least one log of any type
+  const allDates = new Set<string>();
+  for (const s of symptoms) allDates.add(toDateStr(s.loggedAt));
+  for (const m of meals) allDates.add(toDateStr(m.loggedAt));
+  for (const p of products) allDates.add(toDateStr(p.loggedAt));
+  for (const s of supplements) allDates.add(toDateStr(s.loggedAt));
+
+  const daysTracked = allDates.size;
+
+  // Current streak — consecutive days ending today with at least one log
+  const todayStr = new Date().toISOString().slice(0, 10);
+  let streak = 0;
+  const checkDate = new Date();
+  while (true) {
+    const ds = checkDate.toISOString().slice(0, 10);
+    if (allDates.has(ds)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      // Allow today to be partial — if today has no logs, streak is 0
+      if (ds === todayStr) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        continue;
+      }
+      break;
+    }
+  }
+
+  // Average severity over 7 days
+  const symptoms7d = filterByRange(getAllSymptoms(), "7d");
+  const avgSeverity7d = symptoms7d.length
+    ? Math.round((symptoms7d.reduce((sum, s) => sum + s.severity, 0) / symptoms7d.length) * 10) / 10
+    : 0;
+
+  return {
+    daysTracked,
+    symptomsLogged: symptoms.length,
+    currentStreak: streak,
+    avgSeverity7d,
+  };
+}
+
+/* ── Section 2: Symptom Trends ── */
+
+export interface TrendDayPoint {
+  date: string;
+  label: string;
+  values: { symptomName: string; severity: number }[];
+}
+
+export function getSymptomTrends(range: TimeRange): TrendDayPoint[] {
+  const symptoms = filterByRange(getAllSymptoms(), range);
+
+  // Group symptoms by day
+  const byDay: Record<string, TrendDayPoint> = {};
+  const days = timeRangeDays(range);
+
+  // Create entries for each day in the range
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const label = days <= 14
+      ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : d.toLocaleDateString("en-US", { weekday: "short" });
+    byDay[dateStr] = { date: dateStr, label, values: [] };
+  }
+
+  // Fill in actual symptom values
+  for (const s of symptoms) {
+    const dateStr = toDateStr(s.loggedAt);
+    if (byDay[dateStr]) {
+      byDay[dateStr].values.push({
+        symptomName: s.symptomName,
+        severity: s.severity,
+      });
+    }
+  }
+
+  return Object.values(byDay);
+}
+
+/* ── Section 3: Flare Day Analysis ── */
+
+export interface FlareDayItem {
+  day: string;
+  value: number;
+  isFlare: boolean;
+}
+
+export interface DayOfWeekItem {
+  day: string;
+  avgSeverity: number;
+  logCount: number;
+}
+
+export function getFlareDayAnalysis(range: TimeRange): {
+  flareData: FlareDayItem[];
+  flareCount: number;
+  totalDays: number;
+  dayOfWeekData: DayOfWeekItem[];
+} {
+  const symptoms = filterByRange(getAllSymptoms(), range);
+  const days = timeRangeDays(range);
+
+  // Group symptoms by day
+  const byDay: Record<string, SymptomLog[]> = {};
+  for (const s of symptoms) {
+    const ds = toDateStr(s.loggedAt);
+    if (!byDay[ds]) byDay[ds] = [];
+    byDay[ds].push(s);
+  }
+
+  // Create data for each day in range
+  const flareData: FlareDayItem[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const dayLabel = d.toLocaleDateString("en-US", { weekday: "short" });
+
+    const daySymptoms = byDay[dateStr] || [];
+    const avgSeverity = daySymptoms.length
+      ? Math.round((daySymptoms.reduce((sum, s) => sum + s.severity, 0) / daySymptoms.length) * 10) / 10
+      : 0;
+
+    flareData.push({
+      day: dayLabel,
+      value: avgSeverity,
+      isFlare: avgSeverity >= 6,
+    });
+  }
+
+  const flareCount = flareData.filter((d) => d.isFlare).length;
+
+  // Day of week breakdown
+  const byDayOfWeek: Record<string, { severities: number[]; count: number }> = {
+    Monday: { severities: [], count: 0 },
+    Tuesday: { severities: [], count: 0 },
+    Wednesday: { severities: [], count: 0 },
+    Thursday: { severities: [], count: 0 },
+    Friday: { severities: [], count: 0 },
+    Saturday: { severities: [], count: 0 },
+    Sunday: { severities: [], count: 0 },
+  };
+
+  for (const s of symptoms) {
+    const d = new Date(s.loggedAt);
+    const dayName = d.toLocaleDateString("en-US", { weekday: "long" });
+    if (byDayOfWeek[dayName]) {
+      byDayOfWeek[dayName].severities.push(s.severity);
+    }
+  }
+
+  const dayOfWeekData: DayOfWeekItem[] = Object.entries(byDayOfWeek).map(([day, data]) => ({
+    day,
+    avgSeverity: data.severities.length
+      ? Math.round((data.severities.reduce((a, b) => a + b, 0) / data.severities.length) * 10) / 10
+      : 0,
+    logCount: data.severities.length,
+  }));
+
+  return { flareData, flareCount, totalDays: days, dayOfWeekData };
+}
+
+/* ── Section 4: Ingredient Correlations ── */
+
+export interface IngredientCorrelation {
+  ingredientName: string;
+  timesLogged: number;
+  timesOnFlareDays: number;
+  correlationPercent: number;
+  category: string;
+  logDates: string[];
+}
+
+export function getIngredientCorrelations(range: TimeRange): IngredientCorrelation[] {
+  const symptoms = filterByRange(getAllSymptoms(), range);
+  const ingredients = filterByRange(
+    getStore<IngredientLog[]>("ingredient_logs", []),
+    range,
+  );
+
+  // Get flare days (days where avg symptom severity >= 6)
+  const byDay: Record<string, SymptomLog[]> = {};
+  for (const s of symptoms) {
+    const ds = toDateStr(s.loggedAt);
+    if (!byDay[ds]) byDay[ds] = [];
+    byDay[ds].push(s);
+  }
+  const flareDays = new Set<string>();
+  for (const [ds, daySymptoms] of Object.entries(byDay)) {
+    const avg = daySymptoms.reduce((sum, s) => sum + s.severity, 0) / daySymptoms.length;
+    if (avg >= 6) {
+      flareDays.add(ds);
+    }
+  }
+
+  // Group ingredient logs by ingredient name
+  const ingByName: Record<string, { dates: string[]; category: string }> = {};
+  for (const ing of ingredients) {
+    if (!ingByName[ing.name]) {
+      ingByName[ing.name] = { dates: [], category: ing.category };
+    }
+    ingByName[ing.name].dates.push(toDateStr(ing.loggedAt));
+  }
+
+  // Also get ingredient info from meal logs (which log via logIngredient)
+  // And from product/supplement logs
+
+  const correlations: IngredientCorrelation[] = Object.entries(ingByName)
+    .map(([name, data]) => {
+      const timesLogged = data.dates.length;
+      const timesOnFlareDays = data.dates.filter((d) => flareDays.has(d)).length;
+      const correlationPercent = timesLogged > 0
+        ? Math.round((timesOnFlareDays / timesLogged) * 100)
+        : 0;
+
+      // Get sample log dates for detail expansion
+      const uniqueFlareDates = [...new Set(data.dates.filter((d) => flareDays.has(d)))];
+      const logDates = uniqueFlareDates.slice(0, 5).map((d) => {
+        // Find avg severity for that flare day
+        const daySymptoms = byDay[d] || [];
+        const avgSev = daySymptoms.length
+          ? Math.round((daySymptoms.reduce((s, ss) => s + ss.severity, 0) / daySymptoms.length) * 10) / 10
+          : 0;
+        const dateLabel = new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${dateLabel} — Flare day (avg ${avgSev}/10)`;
+      });
+
+      return {
+        ingredientName: name,
+        timesLogged,
+        timesOnFlareDays,
+        correlationPercent,
+        category: data.category,
+        logDates,
+      };
+    })
+    .filter((c) => c.timesLogged > 0)
+    .sort((a, b) => b.correlationPercent - a.correlationPercent);
+
+  return correlations;
+}
+
+/* ── Section 5: Combined Timeline ── */
+
+export type TimelineEntryType = "symptom" | "meal" | "product" | "supplement";
+
+export interface TimelineEntry {
+  id: string;
+  type: TimelineEntryType;
+  title: string;
+  subtitle: string;
+  severity?: number;
+  time: string;
+  ingredients?: string[];
+  notes?: string;
+}
+
+export function getCombinedTimeline(limit = 50): TimelineEntry[] {
+  const symptoms = getAllSymptoms();
+  const meals = getAllMeals();
+  const products = getStore<ProductLog[]>("product_logs", []);
+  const supplements = getAllSupplements();
+
+  const entries: TimelineEntry[] = [];
+
+  for (const s of symptoms) {
+    const d = new Date(s.loggedAt);
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    // Is this today?
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    entries.push({
+      id: `symptom-${s.id}`,
+      type: "symptom",
+      title: `${s.symptomName}${s.severity >= 6 ? " (flare)" : ""}`,
+      subtitle: dateStr === todayStr ? "Today" : dateStr,
+      severity: s.severity,
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      notes: s.notes ?? undefined,
+    });
+  }
+
+  for (const m of meals) {
+    const d = new Date(m.loggedAt);
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    entries.push({
+      id: `meal-${m.id}`,
+      type: "meal",
+      title: `${m.mealType ? m.mealType.charAt(0).toUpperCase() + m.mealType.slice(1) + " — " : ""}${m.foodName}`,
+      subtitle: dateStr === todayStr ? "Today" : dateStr,
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      ingredients: m.ingredients ?? undefined,
+    });
+  }
+
+  for (const p of products) {
+    const d = new Date(p.loggedAt);
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    entries.push({
+      id: `product-${p.id}`,
+      type: "product",
+      title: p.productName + (p.brand ? ` (${p.brand})` : ""),
+      subtitle: dateStr === todayStr ? "Today" : dateStr,
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      ingredients: p.ingredients ? p.ingredients.split(",").map((i) => i.trim()).filter(Boolean) : undefined,
+      notes: p.notes ?? undefined,
+    });
+  }
+
+  for (const s of supplements) {
+    const d = new Date(s.loggedAt);
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    entries.push({
+      id: `supplement-${s.id}`,
+      type: "supplement",
+      title: s.supplementName + (s.dosage ? ` — ${s.dosage}` : ""),
+      subtitle: dateStr === todayStr ? "Today" : dateStr,
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      ingredients: s.ingredients ? s.ingredients.split(",").map((i) => i.trim()).filter(Boolean) : undefined,
+      notes: s.notes ?? undefined,
+    });
+  }
+
+  // Sort by loggedAt descending, then take limit
+  entries.sort((a, b) => {
+    // Compare by subtitle (date) first, then by time
+    const dateA = a.subtitle === "Today" ? new Date().getTime() : new Date(a.subtitle + " 2026").getTime();
+    const dateB = b.subtitle === "Today" ? new Date().getTime() : new Date(b.subtitle + " 2026").getTime();
+    return dateB - dateA || b.time.localeCompare(a.time);
+  });
+
+  return entries.slice(0, limit);
+}
+
+/* ══════════════════════════════════════════
+   Activity Level Correlation
+   ══════════════════════════════════════════ */
+
+export interface ActivityLevelCorrelation {
+  level: string;
+  label: string;
+  avgSeverity: number;
+  symptomCount: number;
+  color: string;
+}
+
+export function getActivityLevelCorrelation(range: TimeRange = "30d"): ActivityLevelCorrelation[] {
+  const symptoms = filterByRange(getAllSymptoms(), range);
+
+  const byLevel: Record<string, { totalSeverity: number; count: number }> = {
+    low: { totalSeverity: 0, count: 0 },
+    medium: { totalSeverity: 0, count: 0 },
+    high: { totalSeverity: 0, count: 0 },
+  };
+
+  for (const s of symptoms) {
+    const level = s.activityLevel ?? "low"; // default to "low" if not set
+    if (byLevel[level]) {
+      byLevel[level].totalSeverity += s.severity;
+      byLevel[level].count++;
+    }
+  }
+
+  const levelConfig: Record<string, { label: string; color: string }> = {
+    low: { label: "Low Activity", color: "bg-green-400" },
+    medium: { label: "Medium Activity", color: "bg-amber-400" },
+    high: { label: "High Activity", color: "bg-coral-400" },
+  };
+
+  return Object.entries(byLevel)
+    .filter(([, data]) => data.count > 0)
+    .map(([level, data]) => ({
+      level,
+      label: levelConfig[level]?.label ?? level,
+      avgSeverity: Math.round((data.totalSeverity / data.count) * 10) / 10,
+      symptomCount: data.count,
+      color: levelConfig[level]?.color ?? "bg-brand-400",
+    }))
+    .sort((a, b) => {
+      const order = { low: 0, medium: 1, high: 2 };
+      return (order[a.level as keyof typeof order] ?? 0) - (order[b.level as keyof typeof order] ?? 0);
+    });
 }
