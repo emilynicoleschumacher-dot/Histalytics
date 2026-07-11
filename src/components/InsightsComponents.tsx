@@ -307,30 +307,68 @@ export function FlareDayChart({ data, flareCount, totalDays, className = "" }: F
         </div>
       </div>
 
-      {/* Bar chart */}
-      <div className="flex items-end gap-1.5 h-32 pt-2">
-        {data.map((day) => (
-          <div key={day.day} className="flex-1 flex flex-col items-center gap-1">
-            <div className="relative w-full max-w-[28px] flex-1 flex items-end">
+      {/* Flare summary */}
+      <div className="flex items-center gap-4 mb-5 p-4 rounded-xl bg-coral-50/60 border border-coral-200/50">
+        <div className="w-12 h-12 rounded-xl bg-coral-100 flex items-center justify-center text-coral-500">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-text-primary">
+            {flareCount} flare day{flareCount !== 1 ? "s" : ""} in the last {totalDays} days
+          </p>
+          <p className="text-xs text-text-muted">
+            {flarePercent}% of days had elevated symptom severity (avg ≥ 6/10)
+          </p>
+        </div>
+      </div>
+
+      {/* Color key */}
+      <div className="flex items-center gap-4 mb-4 text-xs text-text-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400 inline-block" />
+          Low (≤3)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
+          Moderate
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-coral-400 inline-block" />
+          Flare (≥6)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-neutral-200 inline-block" />
+          No data
+        </span>
+      </div>
+
+      {/* Severity dots row */}
+      <div className="flex items-end justify-between gap-2 py-2">
+        {data.map((day) => {
+          const dotColor = !day.value || (day.value === 0 && !day.isFlare)
+            ? "bg-neutral-200 border border-neutral-300 text-transparent"
+            : day.isFlare
+              ? "bg-coral-400 text-white"
+              : day.value > 3
+                ? "bg-yellow-400 text-white"
+                : "bg-green-400 text-white";
+          const showValue = day.value > 0;
+          return (
+            <div key={day.day} className="flex-1 flex flex-col items-center gap-1.5">
               <div
-                className={`w-full rounded-lg transition-all duration-500 ${
-                  day.isFlare
-                    ? "bg-coral-400"
-                    : day.value > 3
-                      ? "bg-yellow-400"
-                      : "bg-green-400"
-                }`}
-                style={{
-                  height: `${(day.value / 10) * 100}%`,
-                  minHeight: day.value > 0 ? "6px" : "0",
-                }}
-              />
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow-sm transition-transform hover:scale-110 ${dotColor}`}
+                title={`${day.day}: severity ${day.value}/10${day.isFlare ? " (flare)" : ""}`}
+              >
+                {showValue ? day.value : "—"}
+              </div>
+              <span className="text-[10px] text-text-muted truncate w-full text-center font-medium">
+                {day.day}
+              </span>
             </div>
-            <span className="text-[9px] text-text-muted truncate w-full text-center">
-              {day.day}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
