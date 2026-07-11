@@ -243,15 +243,20 @@ function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* Severity trend */}
+        {/* 7-Day Severity — severity dots trend */}
         <Card elevated className="lg:col-span-1">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-text-primary">
-              7-Day Severity
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-primary">
+                7-Day Severity
+              </h2>
+              <span className="text-[10px] text-text-muted font-medium bg-brand-50 px-2 py-0.5 rounded-full">
+                Trend
+              </span>
+            </div>
           </CardHeader>
           <CardBody>
-            <div className="flex items-end gap-2 h-32 pt-2">
+            <div className="flex items-end justify-between gap-1.5 pt-2 pb-1" style={{ minHeight: "100px" }}>
               {[
                 { day: "Mon", value: 6 },
                 { day: "Tue", value: 8 },
@@ -260,29 +265,31 @@ function Dashboard() {
                 { day: "Fri", value: 4 },
                 { day: "Sat", value: 2 },
                 { day: "Sun", value: 3 },
-              ].map((day) => (
-                <div
-                  key={day.day}
-                  className="flex-1 flex flex-col items-center gap-1"
-                >
-                  <div className="relative w-full max-w-[32px] flex-1 flex items-end">
+              ].map((day, i, arr) => {
+                const dotColor = day.value <= 3
+                  ? "bg-green-400 border-green-500"
+                  : day.value <= 6
+                    ? "bg-yellow-400 border-yellow-500"
+                    : "bg-red-400 border-red-500";
+                return (
+                  <div key={day.day} className="flex-1 flex flex-col items-center gap-1.5">
                     <div
-                      className={`w-full rounded-lg transition-all duration-500 ${
-                        day.value <= 3
-                          ? "bg-green-400"
-                          : day.value <= 6
-                            ? "bg-yellow-400"
-                            : "bg-red-400"
-                      }`}
-                      style={{
-                        height: `${(day.value / 10) * 100}%`,
-                        minHeight: "8px",
-                      }}
-                    />
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm border-2 transition-transform hover:scale-110 ${dotColor}`}
+                      title={`${day.day}: severity ${day.value}/10`}
+                      style={{ marginBottom: `${(day.value / 10) * 40}px` }}
+                    >
+                      {day.value}
+                    </div>
+                    {/* Connecting line to next dot */}
+                    {i < arr.length - 1 && (
+                      <div className="w-full h-px bg-brand-200/50 -mt-1" />
+                    )}
+                    <span className="text-[10px] text-text-muted font-medium">
+                      {day.day}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-text-muted">{day.day}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardBody>
         </Card>
