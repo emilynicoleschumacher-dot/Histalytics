@@ -2,6 +2,9 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
+// Check if Clerk is configured — Clerk components throw without ClerkProvider
+const hasClerk = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+
 // Simple SVG icons instead of emoji for a more polished look
 const icons = {
   home: (
@@ -302,16 +305,20 @@ export function Header() {
               </Link>
             )
           )}
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all text-text-muted hover:text-brand-600 hover:bg-brand-50">
-                {icons.profile}
-              </button>
-            </SignInButton>
-          </SignedOut>
+          {hasClerk && (
+            <>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="ml-2 flex items-center justify-center w-9 h-9 rounded-full transition-all text-text-muted hover:text-brand-600 hover:bg-brand-50">
+                    {icons.profile}
+                  </button>
+                </SignInButton>
+              </SignedOut>
+            </>
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -372,22 +379,24 @@ export function Header() {
                 </Link>
               )
             )}
-            <div className="border-t border-border-light pt-2 mt-2 space-y-1">
-              <SignedIn>
-                <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-secondary">
-                  <UserButton afterSignOutUrl="/" />
-                  <span>Account</span>
-                </div>
-              </SignedIn>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-brand-600 hover:bg-brand-50/50 transition-colors">
-                    {icons.profile}
-                    Sign In
-                  </button>
-                </SignInButton>
-              </SignedOut>
-            </div>
+            {hasClerk && (
+              <div className="border-t border-border-light pt-2 mt-2 space-y-1">
+                <SignedIn>
+                  <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-secondary">
+                    <UserButton afterSignOutUrl="/" />
+                    <span>Account</span>
+                  </div>
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-brand-600 hover:bg-brand-50/50 transition-colors">
+                      {icons.profile}
+                      Sign In
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+              </div>
+            )}
           </nav>
         </div>
       )}
