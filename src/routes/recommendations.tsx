@@ -24,6 +24,23 @@ function Recommendations() {
         description="Personalized product matches based on your logged symptoms"
       />
 
+      {/* Medical disclaimer */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/80 border border-amber-200/60 mb-8">
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-amber-800">
+            These are research-backed references — not medical recommendations.
+          </p>
+          <p className="text-xs text-amber-600/80 mt-0.5">
+            Always discuss supplements and medications with your healthcare provider before trying them.
+          </p>
+        </div>
+      </div>
+
       {!hasSymptoms ? (
         <EmptyState
           title="No symptom data yet"
