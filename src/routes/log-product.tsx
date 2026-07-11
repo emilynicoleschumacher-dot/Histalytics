@@ -123,7 +123,7 @@ function LogProduct() {
             Common trigger ingredients to watch for
           </h3>
           <div className="flex flex-wrap gap-2">
-            {["Fragrance / Parfum", "Essential Oils", "SLS", "Parabens", "Phthalates", "Propylene Glycol", "Formaldehyde Releasers", "Sulfates", "Alcohol Denat."].map((ing) => (
+            {["Fragrance / Parfum", "Essential Oils", "SLS", "Parabens", "Phthalates", "Propylene Glycol", "Sulfates", "Alcohol Denat."].map((ing) => (
               <button
                 key={ing}
                 type="button"

@@ -91,7 +91,7 @@ function LogSymptom() {
         <Input
           label="Duration"
           type="number"
-          placeholder="e.g. 60"
+          placeholder="e.g. 3 hours"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           helperText="How long did the symptom last?"

@@ -19,7 +19,7 @@ const commonIngredients = [
   "Vanilla extract", "Chocolate", "Cocoa", "Coffee", "Tea",
   "Gelatin", "Pectin", "Xanthan gum", "Guar gum",
   "Citric acid", "Ascorbic acid", "Sorbic acid",
-  "Sulfites", "Nitrates", "MSG", "Histamine", "Tyramine",
+  "Sulfites", "Nitrates", "MSG", "Tyramine",
   "Gluten", "Lactose", "Soy", "Corn syrup",
   "High-fructose corn syrup", "Artificial flavor",
   "Natural flavor", "Food coloring", "Red 40", "Yellow 5",
@@ -218,7 +218,7 @@ export function IngredientInput({
             Quick add common triggers:
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {["Gluten", "Lactose", "Soy", "Eggs", "Histamine", "Sulfites"].map(
+            {["Gluten", "Lactose", "Soy", "Eggs", "Sulfites"].map(
               (ing) => (
                 <button
                   key={ing}

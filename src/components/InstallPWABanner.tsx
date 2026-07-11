@@ -4,16 +4,19 @@ const STORAGE_KEY = "histalytics-pwa-dismissed";
 
 /**
  * Detects if the user is on iOS Safari (the only browser that supports Add to Home Screen on iPhone)
- * and NOT already in standalone (PWA) mode.
+ * and NOT already in standalone (PWA) mode. Excludes DuckDuckGo which also matches Safari UA patterns.
  */
 function shouldShowBanner(): "safari" | "other-ios" | false {
   if (typeof window === "undefined") return false;
 
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  const isIOS = /iphone|ipad|ipod/i.test(ua);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+  const isDuckDuckGo = /duckduckgo/i.test(ua);
 
   if (isStandalone) return false;
+  if (isDuckDuckGo) return false;
   if (isSafari && isIOS) return "safari";
   if (isIOS) return "other-ios";
   return false;

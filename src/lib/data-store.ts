@@ -897,7 +897,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
 
 /* ══════════════════════════════════════════
    Activity Level Correlation
-   ══════════════════════════════════════════ */
+   ══════════════════════════��═══════════════ */
 
 export interface ActivityLevelCorrelation {
   level: string;
@@ -943,4 +943,145 @@ export function getActivityLevelCorrelation(range: TimeRange = "30d"): ActivityL
       const order = { low: 0, medium: 1, high: 2 };
       return (order[a.level as keyof typeof order] ?? 0) - (order[b.level as keyof typeof order] ?? 0);
     });
+}
+
+/* ─── Demo / Seed Data ─── */
+
+export function seedDemoData(): void {
+  const now = Date.now();
+  const day = 86_400_000; // ms in one day
+
+  const symptomTemplates = [
+    { id: "s1", name: "Headache", system: "Nervous System", baseSeverity: 6 },
+    { id: "s2", name: "Fatigue", system: "General", baseSeverity: 7 },
+    { id: "s3", name: "Brain Fog", system: "Nervous System", baseSeverity: 5 },
+    { id: "s4", name: "Nausea", system: "Digestive", baseSeverity: 4 },
+    { id: "s5", name: "Skin flushing", system: "Skin", baseSeverity: 5 },
+    { id: "s6", name: "Joint pain", system: "Musculoskeletal", baseSeverity: 4 },
+    { id: "s7", name: "Bloating", system: "Digestive", baseSeverity: 3 },
+    { id: "s8", name: "Anxiety", system: "Nervous System", baseSeverity: 5 },
+  ];
+
+  const mealTemplates = [
+    { name: "Oatmeal with blueberries", type: "breakfast", ingredients: ["Oats", "Blueberries", "Honey", "Almond milk"] },
+    { name: "Scrambled eggs on toast", type: "breakfast", ingredients: ["Eggs", "Bread", "Butter", "Salt"] },
+    { name: "Grilled chicken salad", type: "lunch", ingredients: ["Chicken breast", "Lettuce", "Olive oil", "Lemon juice", "Cucumber"] },
+    { name: "Turkey sandwich", type: "lunch", ingredients: ["Turkey", "Bread", "Lettuce", "Mustard"] },
+    { name: "Salmon with rice", type: "dinner", ingredients: ["Salmon", "White rice", "Broccoli", "Butter", "Lemon"] },
+    { name: "Beef stir-fry", type: "dinner", ingredients: ["Beef", "Bell peppers", "Rice", "Soy sauce", "Garlic"] },
+    { name: "Apple with almond butter", type: "snack", ingredients: ["Apple", "Almond butter"] },
+    { name: "Aged cheese plate", type: "snack", ingredients: ["Aged cheddar", "Brie", "Crackers", "Grapes"] },
+  ];
+
+  // Build symptoms: some days are flare days (lots of symptoms, high severity),
+  // some are good days (few/no symptoms)
+  const symptomLogs: SymptomLog[] = [];
+  const mealLogs: MealLog[] = [];
+  const ingredientLogs: IngredientLog[] = [];
+
+  for (let d = 13; d >= 0; d--) {
+    const date = new Date(now - d * day);
+    const isFlareDay = d === 12 || d === 8 || d === 3; // 3 flare days
+    const isGoodDay = d === 10 || d === 5 || d === 0; // 3 good days
+
+    // Log symptoms
+    if (isFlareDay) {
+      // Bad flare — lots of symptoms, high severity
+      for (const tpl of symptomTemplates) {
+        const severity = Math.min(10, tpl.baseSeverity + Math.floor(Math.random() * 4));
+        symptomLogs.push({
+          id: `demo-sym-${d}-${tpl.id}`,
+          symptomId: tpl.id,
+          symptomName: tpl.name,
+          bodySystem: tpl.system,
+          severity,
+          durationMinutes: 60 + Math.floor(Math.random() * 240),
+          activityLevel: "low",
+          notes: null,
+          loggedAt: new Date(date.getTime() + 8 * 3600_000 + Math.random() * 12 * 3600_000).toISOString(),
+        });
+        // Also log ingredient link for specific triggers
+        if (tpl.name === "Headache" || tpl.name === "Fatigue") {
+          ingredientLogs.push({
+            id: `demo-ing-${d}-${tpl.id}`,
+            name: "Aged cheddar",
+            category: "food",
+            sourceType: "meal",
+            histamineLevel: "high",
+            notes: `From: Aged cheese plate (day ${d})`,
+            loggedAt: new Date(date.getTime() + 8 * 3600_000).toISOString(),
+          });
+        }
+      }
+    } else if (isGoodDay) {
+      // Good day — just 1-2 mild symptoms
+      const mild = ["Skin flushing", "Bloating"];
+      for (const name of mild) {
+        const tpl = symptomTemplates.find((t) => t.name === name)!;
+        symptomLogs.push({
+          id: `demo-sym-${d}-${tpl.id}`,
+          symptomId: tpl.id,
+          symptomName: tpl.name,
+          bodySystem: tpl.system,
+          severity: 2 + Math.floor(Math.random() * 2),
+          durationMinutes: 30 + Math.floor(Math.random() * 60),
+          activityLevel: Math.random() > 0.5 ? "medium" : "high",
+          notes: null,
+          loggedAt: new Date(date.getTime() + 14 * 3600_000).toISOString(),
+        });
+      }
+    } else {
+      // Normal day — 3-5 symptoms
+      const count = 3 + Math.floor(Math.random() * 3);
+      const shuffled = [...symptomTemplates].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < count; i++) {
+        const tpl = shuffled[i];
+        const severity = Math.max(1, tpl.baseSeverity - 2 + Math.floor(Math.random() * 4));
+        symptomLogs.push({
+          id: `demo-sym-${d}-${tpl.id}`,
+          symptomId: tpl.id,
+          symptomName: tpl.name,
+          bodySystem: tpl.system,
+          severity,
+          durationMinutes: 30 + Math.floor(Math.random() * 180),
+          activityLevel: ["low", "medium", "high"][Math.floor(Math.random() * 3)] as ActivityLevel,
+          notes: null,
+          loggedAt: new Date(date.getTime() + 8 * 3600_000 + Math.random() * 14 * 3600_000).toISOString(),
+        });
+      }
+    }
+
+    // Log 2-3 meals per day
+    const mealCount = 2 + Math.floor(Math.random() * 2);
+    const shuffledMeals = [...mealTemplates].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < mealCount; i++) {
+      const mt = shuffledMeals[i % shuffledMeals.length];
+      mealLogs.push({
+        id: `demo-meal-${d}-${i}`,
+        foodName: mt.name,
+        mealType: mt.type,
+        portionSize: ["1 cup", "1 serving", "medium bowl", "6 oz"][Math.floor(Math.random() * 4)],
+        ingredients: mt.ingredients,
+        activityLevel: null,
+        notes: null,
+        loggedAt: new Date(date.getTime() + 8 * 3600_000 + i * 5 * 3600_000).toISOString(),
+      });
+      // Log each ingredient
+      for (const ing of mt.ingredients) {
+        ingredientLogs.push({
+          id: `demo-ing-${d}-${i}-${ing.slice(0, 4)}`,
+          name: ing,
+          category: "food",
+          sourceType: "meal",
+          histamineLevel: ["low", "medium", "high"][Math.floor(Math.random() * 3)],
+          notes: `From: ${mt.name}`,
+          loggedAt: new Date(date.getTime() + 8 * 3600_000 + i * 5 * 3600_000).toISOString(),
+        });
+      }
+    }
+  }
+
+  setStore("symptom_logs", symptomLogs);
+  setStore("meal_logs", mealLogs);
+  setStore("ingredient_logs", ingredientLogs);
 }

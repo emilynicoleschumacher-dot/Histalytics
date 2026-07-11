@@ -215,7 +215,7 @@ export function StatCard({
           )}
         </div>
         {icon && (
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0 overflow-visible">
             {icon}
           </div>
         )}
