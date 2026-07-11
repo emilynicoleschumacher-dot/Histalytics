@@ -7,14 +7,15 @@ import { Button } from "~/components/Button";
 const plans = [
   {
     name: "Monthly",
-    price: "$9",
+    price: "$4.99",
     period: "/month",
-    description: "For individuals starting their symptom tracking journey",
+    description: "Everything you need to start tracking your symptoms",
     features: [
       "Unlimited symptom logging",
-      "Unlimited meal logging",
-      "Basic trend dashboard",
-      "Product recommendations",
+      "Unlimited meal & product logging",
+      "Ingredient-level tracking",
+      "Personal trigger discovery",
+      "Full insights dashboard",
       "30-day history",
     ],
     cta: "Get started",
@@ -22,36 +23,19 @@ const plans = [
   },
   {
     name: "Annual",
-    price: "$89",
+    price: "$55",
     period: "/year",
-    description: "Save 17% with annual billing — best for committed trackers",
+    description: "Save 8% with annual billing — commit to your health",
     features: [
       "Everything in Monthly",
       "Full history (unlimited)",
       "Advanced analytics & trends",
-      "Ingredient-level tracking",
-      "Trigger identification",
       "Priority support",
+      "Early access to new features",
     ],
     cta: "Start free trial",
     popular: true,
     badge: "Best value",
-  },
-  {
-    name: "Premium",
-    price: "$19",
-    period: "/month",
-    description: "For power users who want the complete picture",
-    features: [
-      "Everything in Annual",
-      "AI-powered symptom coach",
-      "Practitioner-ready reports",
-      "Export data (PDF/CSV)",
-      "Custom tracking categories",
-      "Early access to new features",
-    ],
-    cta: "Go Premium",
-    popular: false,
   },
 ];
 
@@ -68,7 +52,7 @@ function Pricing() {
         className="text-center"
       />
 
-      <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-4">
+      <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mt-4">
         {plans.map((plan) => (
           <Card
             key={plan.name}
