@@ -1,10 +1,19 @@
 import { neon } from "@neondatabase/serverless";
 
-const connectionString = process.env.DATABASE_URL!;
-const sql = neon(connectionString);
+const url = process.env.DATABASE_URL;
+let sql: ReturnType<typeof neon> | null = null;
+
+function getSql() {
+  if (!sql) {
+    if (!url) throw new Error("DATABASE_URL not set");
+    sql = neon(url);
+  }
+  return sql;
+}
 
 export async function initDB() {
-  await sql`
+  const db = getSql();
+  await db`
     CREATE TABLE IF NOT EXISTS threads (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -17,8 +26,7 @@ export async function initDB() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
   `;
-
-  await sql`
+  await db`
     CREATE TABLE IF NOT EXISTS replies (
       id SERIAL PRIMARY KEY,
       thread_id INTEGER REFERENCES threads(id) ON DELETE CASCADE,
@@ -27,17 +35,6 @@ export async function initDB() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `;
-
-  // Add columns if they don't exist (idempotent migration)
-  const migrations = [
-    `ALTER TABLE threads ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0`,
-    `ALTER TABLE threads ADD COLUMN IF NOT EXISTS reply_count INTEGER DEFAULT 0`,
-    `ALTER TABLE threads ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP DEFAULT NOW()`,
-    `ALTER TABLE threads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`,
-  ];
-  for (const m of migrations) {
-    try { await sql.unsafe(m); } catch { /* column may already exist */ }
-  }
 }
 
-export { sql };
+export { getSql as sql };
