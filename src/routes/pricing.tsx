@@ -19,6 +19,7 @@ const plans = [
       "Complete log history",
     ],
     cta: "Get started",
+    href: "https://buy.stripe.com/8x2bJ22l0cLDeFc2Pl97G01",
     popular: false,
   },
   {
@@ -31,6 +32,7 @@ const plans = [
       "Works out to $4.58/month — save 8%",
     ],
     cta: "Start free trial",
+    href: "https://buy.stripe.com/9B6cN69Ns5jb68GcpV97G00",
     popular: true,
     badge: "Best value",
   },
@@ -87,13 +89,15 @@ function Pricing() {
             </CardBody>
 
             <CardFooter>
-              <Button
-                variant={plan.popular ? "primary" : "outline"}
-                size="lg"
-                fullWidth
-              >
-                {plan.cta}
-              </Button>
+              <a href={plan.href} target="_blank" rel="noopener noreferrer" className="w-full">
+                <Button
+                  variant={plan.popular ? "primary" : "outline"}
+                  size="lg"
+                  fullWidth
+                >
+                  {plan.cta}
+                </Button>
+              </a>
               {plan.popular && (
                 <p className="text-xs text-text-muted text-center mt-2">
                   Free 14-day trial. Cancel anytime.
