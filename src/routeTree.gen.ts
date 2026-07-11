@@ -25,6 +25,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CommunityNewRouteImport } from './routes/community.new'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as CommunityIdRouteImport } from './routes/community.$id'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
 
 const TriggerIngredientsRoute = TriggerIngredientsRouteImport.update({
   id: '/trigger-ingredients',
@@ -106,6 +108,16 @@ const CommunityNewRoute = CommunityNewRouteImport.update({
   path: '/community/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,6 +135,8 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
   '/trigger-ingredients': typeof TriggerIngredientsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -140,6 +154,8 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
   '/trigger-ingredients': typeof TriggerIngredientsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,6 +174,8 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
   '/trigger-ingredients': typeof TriggerIngredientsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +195,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/profile'
     | '/recommendations'
+    | '/sign-in'
+    | '/sign-up'
     | '/trigger-ingredients'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -195,6 +215,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/profile'
     | '/recommendations'
+    | '/sign-in'
+    | '/sign-up'
     | '/trigger-ingredients'
   id:
     | '__root__'
@@ -213,6 +235,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/profile'
     | '/recommendations'
+    | '/sign-in'
+    | '/sign-up'
     | '/trigger-ingredients'
   fileRoutesById: FileRoutesById
 }
@@ -233,6 +257,8 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   RecommendationsRoute: typeof RecommendationsRoute
   TriggerIngredientsRoute: typeof TriggerIngredientsRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -349,6 +375,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -369,6 +409,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   RecommendationsRoute: RecommendationsRoute,
   TriggerIngredientsRoute: TriggerIngredientsRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

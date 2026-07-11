@@ -15,6 +15,7 @@ const SQLITE_SCHEMA = `
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  clerk_id TEXT UNIQUE,
   display_name TEXT NOT NULL DEFAULT 'User',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -169,6 +170,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  clerk_id TEXT UNIQUE,
   display_name TEXT NOT NULL DEFAULT 'User',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

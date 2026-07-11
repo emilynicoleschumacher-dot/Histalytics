@@ -1,15 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
-import { useUser, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
-
-const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: "📊" },
-  { path: "/log-symptom", label: "Log Symptom", icon: "📝" },
-  { path: "/log-meal", label: "Log Meal", icon: "🍽️" },
-  { path: "/history", label: "History", icon: "📅" },
-  { path: "/recommendations", label: "Recommendations", icon: "💡" },
-  { path: "/profile", label: "Profile", icon: "👤" },
-];
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
 // Simple SVG icons instead of emoji for a more polished look
 const icons = {
@@ -381,19 +372,21 @@ export function Header() {
                 </Link>
               )
             )}
-            <div className="border-t border-border-light pt-1 mt-1">
-              <Link
-                to="/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActivePath("/profile", location.pathname)
-                    ? "text-brand-600 bg-brand-50"
-                    : "text-text-secondary hover:text-brand-600 hover:bg-brand-50/50"
-                }`}
-              >
-                {icons.profile}
-                Profile
-              </Link>
+            <div className="border-t border-border-light pt-2 mt-2 space-y-1">
+              <SignedIn>
+                <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-secondary">
+                  <UserButton afterSignOutUrl="/" />
+                  <span>Account</span>
+                </div>
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-brand-600 hover:bg-brand-50/50 transition-colors">
+                    {icons.profile}
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
             </div>
           </nav>
         </div>

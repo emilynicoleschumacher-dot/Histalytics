@@ -188,18 +188,51 @@ export function createTables(): void {
   const isPostgres = !!process.env.DATABASE_URL;
   const schema = getSchemaSQL(isPostgres);
   db.exec(schema);
+
+  // Migration: add clerk_id column to users table if missing (existing databases)
+  try {
+    if (isPostgres) {
+      db.run("ALTER TABLE users ADD COLUMN IF NOT EXISTS clerk_id TEXT UNIQUE");
+    } else {
+      // SQLite doesn't support IF NOT EXISTS for ALTER; catch the error silently
+      try {
+        db.run("ALTER TABLE users ADD COLUMN clerk_id TEXT UNIQUE");
+      } catch (_e) {
+        // Column already exists — ignore
+      }
+    }
+  } catch (_e) {
+    // Migration may fail on some engines — ignore
+  }
 }
 
 /**
- * Get or create the default demo user. In production with Clerk,
- * this will be replaced by real user IDs.
+ * Get or create a user. In production with Clerk, pass the Clerk user ID
+ * so each authenticated user gets their own data set.
  */
-export function getOrCreateDefaultUser(): string {
+export function getOrCreateDefaultUser(clerkUserId?: string): string {
   const db = getDb();
-  const isPostgres = !!process.env.DATABASE_URL;
+
+  // If a Clerk user ID is provided, use it directly (find or create)
+  if (clerkUserId) {
+    const existing = db.get("SELECT id FROM users WHERE clerk_id = $clerkId", { $clerkId: clerkUserId });
+    if (existing) return existing.id as string;
+
+    const isPostgres = !!process.env.DATABASE_URL;
+    if (isPostgres) {
+      db.run("INSERT INTO users (clerk_id, display_name) VALUES ($clerkId, 'User')", { $clerkId: clerkUserId });
+    } else {
+      db.run("INSERT INTO users (id, clerk_id, display_name) VALUES (lower(hex(randomblob(16))), $clerkId, 'User')", { $clerkId: clerkUserId });
+    }
+    const created = db.get("SELECT id FROM users WHERE clerk_id = $clerkId", { $clerkId: clerkUserId });
+    return created!.id as string;
+  }
+
+  // Fallback: demo user for development
   const existing = db.get("SELECT id FROM users LIMIT 1");
   if (existing) return existing.id as string;
 
+  const isPostgres = !!process.env.DATABASE_URL;
   if (isPostgres) {
     db.run("INSERT INTO users (display_name) VALUES ('Demo User')");
     const created = db.get("SELECT id FROM users LIMIT 1");
