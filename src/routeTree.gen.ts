@@ -22,9 +22,6 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CommunityNewRouteImport } from './routes/community.new'
-import { Route as CommunityRouteImport } from './routes/community'
-import { Route as CommunityIdRouteImport } from './routes/community.$id'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 
@@ -93,21 +90,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommunityRoute = CommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunityIdRoute = CommunityIdRouteImport.update({
-  id: '/community/$id',
-  path: '/community/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunityNewRoute = CommunityNewRouteImport.update({
-  id: '/community/new',
-  path: '/community/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -121,9 +103,6 @@ const SignUpRoute = SignUpRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/community': typeof CommunityRoute
-  '/community/new': typeof CommunityNewRoute
-  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/insights': typeof InsightsRoute
@@ -140,9 +119,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/community': typeof CommunityRoute
-  '/community/new': typeof CommunityNewRoute
-  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/insights': typeof InsightsRoute
@@ -160,15 +136,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/community': typeof CommunityRoute
-  '/community/new': typeof CommunityNewRoute
-  '/community/$id': typeof CommunityIdRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/insights': typeof InsightsRoute
   '/ingredients': typeof IngredientsRoute
   '/log-meal': typeof LogMealRoute
   '/log-product': typeof LogProductRoute
+  '/log-supplement': typeof LogSupplementRoute
   '/log-symptom': typeof LogSymptomRoute
   '/pricing': typeof PricingRoute
   '/profile': typeof ProfileRoute
@@ -181,9 +155,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/community'
-    | '/community/new'
-    | '/community/$id'
     | '/dashboard'
     | '/history'
     | '/insights'
@@ -201,9 +172,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/community'
-    | '/community/new'
-    | '/community/$id'
     | '/dashboard'
     | '/history'
     | '/insights'
@@ -221,9 +189,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/community'
-    | '/community/new'
-    | '/community/$id'
     | '/dashboard'
     | '/history'
     | '/insights'
@@ -242,9 +207,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CommunityNewRoute: typeof CommunityNewRoute
-  CommunityRoute: typeof CommunityRoute
-  CommunityIdRoute: typeof CommunityIdRoute
   DashboardRoute: typeof DashboardRoute
   HistoryRoute: typeof HistoryRoute
   InsightsRoute: typeof InsightsRoute
@@ -268,27 +230,6 @@ declare module '@tanstack/react-router' {
       path: '/trigger-ingredients'
       fullPath: '/trigger-ingredients'
       preLoaderRoute: typeof TriggerIngredientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community': {
-      id: '/community'
-      path: '/community'
-      fullPath: '/community'
-      preLoaderRoute: typeof CommunityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community/new': {
-      id: '/community/new'
-      path: '/community/new'
-      fullPath: '/community/new'
-      preLoaderRoute: typeof CommunityNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community/$id': {
-      id: '/community/$id'
-      path: '/community/$id'
-      fullPath: '/community/$id'
-      preLoaderRoute: typeof CommunityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recommendations': {
@@ -394,9 +335,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CommunityNewRoute: CommunityNewRoute,
-  CommunityRoute: CommunityRoute,
-  CommunityIdRoute: CommunityIdRoute,
   DashboardRoute: DashboardRoute,
   HistoryRoute: HistoryRoute,
   InsightsRoute: InsightsRoute,
