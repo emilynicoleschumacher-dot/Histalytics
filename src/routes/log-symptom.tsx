@@ -29,7 +29,7 @@ function LogSymptom() {
     e.preventDefault();
     if (!selectedSymptom || !currentSymptom) return;
     setSubmitting(true);
-    logSymptom({
+    await logSymptom({
       symptomId: selectedSymptom,
       symptomName: currentSymptom.name,
       bodySystem: selectedSystem,

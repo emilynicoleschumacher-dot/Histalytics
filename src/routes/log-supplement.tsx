@@ -39,7 +39,7 @@ function LogSupplement() {
     if (!supplementName.trim()) return;
     setSubmitting(true);
     try {
-      logSupplement({
+      await logSupplement({
         supplementName: supplementName.trim(),
         brand: brand.trim() || null,
         dosage: dosage.trim() || null,

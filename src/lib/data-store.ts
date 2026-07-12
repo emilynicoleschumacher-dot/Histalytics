@@ -1,10 +1,39 @@
 /**
- * Client-side data store using localStorage.
- * Replaces the server-side SQLite database for the static SPA build.
+ * Client-side data store using localStorage (fallback) + Neon Postgres API (production).
+ * When the API is available (Vercel), data persists server-side.
+ * Falls back to localStorage when offline (dev mode).
  */
 
 import symptomsData from "~/data/symptoms";
 import productsData from "~/data/products";
+
+/* ─── API Helper ─── */
+
+let _clerkId: string | null = null;
+
+export function setClerkId(id: string | null) {
+  _clerkId = id;
+}
+
+export function getClerkId(): string | null {
+  return _clerkId;
+}
+
+async function apiFetch(path: string, options?: RequestInit): Promise<Response | null> {
+  const clerkId = getClerkId();
+  if (!clerkId) return null;
+  const sep = path.includes("?") ? "&" : "?";
+  try {
+    const res = await fetch(`/api/${path}${sep}clerk_id=${encodeURIComponent(clerkId)}`, {
+      ...options,
+      headers: { "content-type": "application/json", ...options?.headers },
+    });
+    if (!res.ok) return null;
+    return res;
+  } catch {
+    return null;
+  }
+}
 
 /* ─── Types ─── */
 
@@ -124,7 +153,7 @@ export function getSymptomKnowledgeBase() {
 
 /* ─── Symptom Logging ─── */
 
-export function logSymptom(data: {
+export async function logSymptom(data: {
   symptomId: string;
   symptomName: string;
   bodySystem: string;
@@ -132,7 +161,32 @@ export function logSymptom(data: {
   durationMinutes?: number | null;
   activityLevel?: ActivityLevel;
   notes?: string | null;
-}): SymptomLog {
+}): Promise<SymptomLog> {
+  // Try API first
+  const res = await apiFetch("symptoms", {
+    method: "POST",
+    body: JSON.stringify({
+      symptom_id: data.symptomId,
+      symptom_name: data.symptomName,
+      body_system: data.bodySystem,
+      severity: data.severity,
+      duration_minutes: data.durationMinutes,
+      notes: data.notes,
+    }),
+  });
+  if (res) {
+    const apiResult = await res.json();
+    return {
+      id: apiResult.id,
+      symptomId: data.symptomId,
+      symptomName: data.symptomName,
+      bodySystem: data.bodySystem,
+      severity: data.severity,
+      durationMinutes: data.durationMinutes ?? null,
+      notes: data.notes ?? null,
+      loggedAt: apiResult.logged_at,
+    };
+  }
   const logs = getStore<SymptomLog[]>("symptom_logs", []);
   const entry: SymptomLog = {
     id: generateId(),
@@ -160,14 +214,36 @@ export function getAllSymptoms(): SymptomLog[] {
 
 /* ─── Meal Logging ─── */
 
-export function logMeal(data: {
+export async function logMeal(data: {
   foodName: string;
   mealType?: string | null;
   portionSize?: string | null;
   ingredients?: string[] | null;
   activityLevel?: ActivityLevel;
   notes?: string | null;
-}): MealLog {
+}): Promise<MealLog> {
+  // Try API first
+  const res = await apiFetch("meals", {
+    method: "POST",
+    body: JSON.stringify({
+      food_name: data.foodName,
+      meal_type: data.mealType,
+      portion_size: data.portionSize,
+      notes: data.notes,
+    }),
+  });
+  if (res) {
+    const apiResult = await res.json();
+    return {
+      id: apiResult.id,
+      foodName: data.foodName,
+      mealType: data.mealType ?? null,
+      portionSize: data.portionSize ?? null,
+      ingredients: data.ingredients ?? null,
+      notes: data.notes ?? null,
+      loggedAt: apiResult.logged_at,
+    };
+  }
   const logs = getStore<MealLog[]>("meal_logs", []);
   const entry: MealLog = {
     id: generateId(),
@@ -209,13 +285,35 @@ export function getAllMeals(): MealLog[] {
 
 /* ─── Supplement Logging ─── */
 
-export function logSupplement(data: {
+export async function logSupplement(data: {
   supplementName: string;
   brand?: string | null;
   dosage?: string | null;
   ingredients?: string | null;
   notes?: string | null;
-}): SupplementLog {
+}): Promise<SupplementLog> {
+  // Try API first
+  const res = await apiFetch("supplements", {
+    method: "POST",
+    body: JSON.stringify({
+      supplement_name: data.supplementName,
+      brand: data.brand,
+      dosage: data.dosage,
+      notes: data.notes,
+    }),
+  });
+  if (res) {
+    const apiResult = await res.json();
+    return {
+      id: apiResult.id,
+      supplementName: data.supplementName,
+      brand: data.brand ?? null,
+      dosage: data.dosage ?? null,
+      ingredients: data.ingredients ?? null,
+      notes: data.notes ?? null,
+      loggedAt: apiResult.logged_at,
+    };
+  }
   const logs = getStore<SupplementLog[]>("supplement_logs", []);
   const entry: SupplementLog = {
     id: generateId(),
@@ -897,7 +995,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
 
 /* ══════════════════════════════════════════
    Activity Level Correlation
-   ══════════════════════════�����═══════════════ */
+   ══════════════════════════������═══════════════ */
 
 export interface ActivityLevelCorrelation {
   level: string;
