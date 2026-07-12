@@ -232,23 +232,27 @@ export function SymptomTrendChart({ data, className = "" }: SymptomTrendChartPro
             ) : null
           )}
 
-          {/* Data dots on hover (static for wireframe) */}
+          {/* Data dots on hover */}
           {paths.map((path) =>
             path
-              ? path.points
-                  .filter((p) => p.exists)
-                  .map((p, i) => (
-                    <circle
-                      key={`${path.name}-${i}`}
-                      cx={p.x}
-                      cy={p.y}
-                      r="3"
-                      fill={path.color}
-                      stroke="white"
-                      strokeWidth="2"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  ))
+              ? (
+                <g key={`dots-${path.name}`} className="group">
+                  {path.points
+                    .filter((p) => p.exists)
+                    .map((p, i) => (
+                      <circle
+                        key={`${path.name}-${i}`}
+                        cx={p.x}
+                        cy={p.y}
+                        r="3"
+                        fill={path.color}
+                        stroke="white"
+                        strokeWidth="2"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    ))}
+                </g>
+              )
               : null
           )}
         </svg>
