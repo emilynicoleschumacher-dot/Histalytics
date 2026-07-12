@@ -79,8 +79,8 @@ function Dashboard() {
             <Link to="/recommendations" className="hover:text-brand-600 transition-colors">
               Browse Products
             </Link>
-            <Link to="/community" className="hover:text-brand-600 transition-colors">
-              Join Community
+            <Link to="/trigger-ingredients" className="hover:text-brand-600 transition-colors">
+              Track Triggers
             </Link>
             <Link to="/insights" className="hover:text-brand-600 transition-colors">
               See Insights
@@ -146,6 +146,7 @@ function Dashboard() {
   const totalIngredients = data.trends.topIngredients.length;
 
   return (
+    <>
     <div className="container-narrow py-8">
       <PageHeader
         title="Dashboard"
@@ -485,7 +486,7 @@ function Dashboard() {
             <div className="flex items-center justify-between text-xs text-text-muted">
               <span>
                 {ingredientTrends.length > 0
-                  ? `Based on ${ingredientTrends.reduce((a, t) => a + t.timesLogged, 0)} logged ingredients`
+                  ? "Based on " + ingredientTrends.reduce((a, t) => a + t.timesLogged, 0) + " logged ingredients"
                   : "Log meals to start tracking ingredient trends"}
               </span>
               <Link
@@ -508,6 +509,7 @@ function Dashboard() {
         <a href="/profile" className="text-brand-500 hover:text-brand-600 underline">Privacy details</a>
       </p>
     </div>
+    </>
   );
 }
 
