@@ -161,6 +161,7 @@ export async function logSymptom(data: {
   durationMinutes?: number | null;
   activityLevel?: ActivityLevel;
   notes?: string | null;
+  loggedAt?: string | null;
 }): Promise<SymptomLog> {
   // Try API first
   const res = await apiFetch("symptoms", {
@@ -197,7 +198,7 @@ export async function logSymptom(data: {
     durationMinutes: data.durationMinutes ?? null,
     activityLevel: data.activityLevel ?? null,
     notes: data.notes ?? null,
-    loggedAt: new Date().toISOString(),
+    loggedAt: data.loggedAt || new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("symptom_logs", logs);
@@ -221,6 +222,7 @@ export async function logMeal(data: {
   ingredients?: string[] | null;
   activityLevel?: ActivityLevel;
   notes?: string | null;
+  loggedAt?: string | null;
 }): Promise<MealLog> {
   // Try API first
   const res = await apiFetch("meals", {
@@ -253,7 +255,7 @@ export async function logMeal(data: {
     ingredients: data.ingredients ?? null,
     activityLevel: data.activityLevel ?? null,
     notes: data.notes ?? null,
-    loggedAt: new Date().toISOString(),
+    loggedAt: data.loggedAt || new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("meal_logs", logs);
@@ -291,6 +293,7 @@ export async function logSupplement(data: {
   dosage?: string | null;
   ingredients?: string | null;
   notes?: string | null;
+  loggedAt?: string | null;
 }): Promise<SupplementLog> {
   // Try API first
   const res = await apiFetch("supplements", {
@@ -322,7 +325,7 @@ export async function logSupplement(data: {
     dosage: data.dosage ?? null,
     ingredients: data.ingredients ?? null,
     notes: data.notes ?? null,
-    loggedAt: new Date().toISOString(),
+    loggedAt: data.loggedAt || new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("supplement_logs", logs);
@@ -559,6 +562,7 @@ export function logPersonalCareProduct(data: {
   productType?: string;
   ingredients?: string | null;
   notes?: string | null;
+  loggedAt?: string | null;
 }): ProductLog {
   const logs = getStore<ProductLog[]>("product_logs", []);
   const entry: ProductLog = {
@@ -568,7 +572,7 @@ export function logPersonalCareProduct(data: {
     productType: data.productType ?? "other",
     ingredients: data.ingredients ?? null,
     notes: data.notes ?? null,
-    loggedAt: new Date().toISOString(),
+    loggedAt: data.loggedAt || new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("product_logs", logs);
@@ -1182,4 +1186,60 @@ export function seedDemoData(): void {
   setStore("symptom_logs", symptomLogs);
   setStore("meal_logs", mealLogs);
   setStore("ingredient_logs", ingredientLogs);
+}
+
+/* ─── Favorites (Quick-Log) ─── */
+
+export interface FavoriteEntry {
+  id: string;
+  label: string;
+  type: "symptom" | "meal" | "supplement" | "product";
+  /** For symptoms: symptom ID + system */
+  symptomId?: string;
+  symptomName?: string;
+  bodySystem?: string;
+  /** For meals: food name */
+  foodName?: string;
+  mealType?: string;
+  /** For supplements */
+  supplementName?: string;
+  brand?: string;
+  dosage?: string;
+  /** For products */
+  productName?: string;
+  productType?: string;
+  ingredients?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export function getFavorites(): FavoriteEntry[] {
+  return getStore<FavoriteEntry[]>("favorites", []);
+}
+
+export function saveFavorite(entry: Omit<FavoriteEntry, "id" | "createdAt">): FavoriteEntry {
+  const favorites = getFavorites();
+  // Avoid duplicates by type+label
+  const existing = favorites.findIndex((f) => f.type === entry.type && f.label === entry.label);
+  const newEntry: FavoriteEntry = {
+    ...entry,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+  };
+  if (existing >= 0) {
+    favorites[existing] = newEntry;
+  } else {
+    favorites.unshift(newEntry);
+  }
+  setStore("favorites", favorites);
+  return newEntry;
+}
+
+export function removeFavorite(id: string): void {
+  const favorites = getFavorites().filter((f) => f.id !== id);
+  setStore("favorites", favorites);
+}
+
+export function isFavorite(type: string, label: string): boolean {
+  return getFavorites().some((f) => f.type === type && f.label === label);
 }

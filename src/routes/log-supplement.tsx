@@ -4,7 +4,8 @@ import { PageHeader } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea } from "~/components/Input";
-import { logSupplement } from "~/lib/data-store";
+import { logSupplement, saveFavorite, isFavorite } from "~/lib/data-store";
+import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-supplement")({
   component: LogSupplement,
@@ -25,14 +26,43 @@ const COMMON_ADDITIVES = [
   "Sugar / Dextrose",
 ];
 
+function nowISO() {
+  return new Date().toISOString().slice(0, 16);
+}
+
 function LogSupplement() {
   const [supplementName, setSupplementName] = useState("");
   const [brand, setBrand] = useState("");
   const [dosage, setDosage] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const label = supplementName.trim();
+  const isFav = label ? isFavorite("supplement", label) : false;
+
+  const handleFavoriteToggle = () => {
+    if (!label) return;
+    saveFavorite({
+      label,
+      type: "supplement",
+      supplementName: label,
+      brand: brand.trim() || undefined,
+      dosage: dosage.trim() || undefined,
+      notes: notes.trim() || undefined,
+    });
+  };
+
+  const handleFavoriteSelect = (fav: { supplementName?: string; brand?: string; dosage?: string; notes?: string }) => {
+    if (fav.supplementName) {
+      setSupplementName(fav.supplementName);
+      if (fav.brand) setBrand(fav.brand);
+      if (fav.dosage) setDosage(fav.dosage);
+      if (fav.notes) setNotes(fav.notes);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +75,7 @@ function LogSupplement() {
         dosage: dosage.trim() || null,
         ingredients: ingredients.trim() || null,
         notes: notes.trim() || null,
+        loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
       });
       setSuccess(true);
       setSupplementName("");
@@ -52,6 +83,7 @@ function LogSupplement() {
       setDosage("");
       setIngredients("");
       setNotes("");
+      setLoggedAt(nowISO());
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Failed to log supplement:", err);
@@ -70,6 +102,9 @@ function LogSupplement() {
           ✓ Supplement logged successfully! Ingredients have been added to your tracking.
         </div>
       )}
+
+      <FavoritesBar type="supplement" onSelect={handleFavoriteSelect} />
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
           label="Supplement Name"
@@ -92,6 +127,13 @@ function LogSupplement() {
             onChange={(e) => setDosage(e.target.value)}
           />
         </div>
+        <Input
+          label="Date & Time"
+          type="datetime-local"
+          value={loggedAt}
+          onChange={(e) => setLoggedAt(e.target.value)}
+          helperText="When did you take this?"
+        />
         <Textarea
           label="Ingredients List (fillers, binders, excipients)"
           placeholder="List all ingredients from the label. Many supplements contain hidden triggers like microcrystalline cellulose, magnesium stearate, etc."
@@ -105,16 +147,23 @@ function LogSupplement() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
-        <Button
-          type="submit"
-          size="lg"
-          fullWidth
-          isLoading={submitting}
-          disabled={!supplementName.trim()}
-        >
-          Log Supplement
-        </Button>
+        <div className="flex items-center justify-between">
+          <SaveFavoriteToggle
+            label={label}
+            isFavorite={isFav}
+            onToggle={handleFavoriteToggle}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            isLoading={submitting}
+            disabled={!supplementName.trim()}
+          >
+            Log Supplement
+          </Button>
+        </div>
       </form>
+
       {/* Quick-reference: Common supplement additives that trigger MCAS */}
       <Card elevated className="mt-10">
         <CardBody>

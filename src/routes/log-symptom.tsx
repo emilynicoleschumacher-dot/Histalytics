@@ -3,14 +3,19 @@ import { useState } from "react";
 import { PageHeader, SeveritySlider } from "~/components/shared";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-import { getSymptomSystems, logSymptom, type ActivityLevel } from "~/lib/data-store";
+import { getSymptomSystems, logSymptom, saveFavorite, isFavorite, type ActivityLevel } from "~/lib/data-store";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
+import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-symptom")({
   component: LogSymptom,
 });
 
 const symptomSystems = getSymptomSystems();
+
+function nowISO() {
+  return new Date().toISOString().slice(0, 16);
+}
 
 function LogSymptom() {
   const [selectedSystem, setSelectedSystem] = useState("");
@@ -19,11 +24,35 @@ function LogSymptom() {
   const [duration, setDuration] = useState("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(null);
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const currentSystem = symptomSystems.find((s) => s.system === selectedSystem);
   const currentSymptom = currentSystem?.symptoms.find((s) => s.id === selectedSymptom);
+
+  const label = currentSymptom?.name || "";
+  const isFav = label ? isFavorite("symptom", label) : false;
+
+  const handleFavoriteToggle = () => {
+    if (!label || !selectedSystem || !selectedSymptom) return;
+    saveFavorite({
+      label,
+      type: "symptom",
+      symptomId: selectedSymptom,
+      symptomName: label,
+      bodySystem: selectedSystem,
+      notes: notes || undefined,
+    });
+  };
+
+  const handleFavoriteSelect = (fav: { symptomName?: string; symptomId?: string; bodySystem?: string; notes?: string }) => {
+    if (fav.symptomId && fav.bodySystem) {
+      setSelectedSystem(fav.bodySystem);
+      setSelectedSymptom(fav.symptomId);
+      if (fav.notes) setNotes(fav.notes);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +66,7 @@ function LogSymptom() {
       durationMinutes: duration ? parseInt(duration.match(/\d+/)?.[0] || "0", 10) || null : null,
       activityLevel,
       notes: notes || null,
+      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
     });
     setSubmitting(false);
     setSuccess(true);
@@ -47,6 +77,7 @@ function LogSymptom() {
       setSeverity(5);
       setDuration("");
       setNotes("");
+      setLoggedAt(nowISO());
     }, 2000);
   };
 
@@ -62,6 +93,8 @@ function LogSymptom() {
           ✓ Symptom logged successfully!
         </div>
       )}
+
+      <FavoritesBar type="symptom" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Select
@@ -97,6 +130,14 @@ function LogSymptom() {
           helperText="How long did the symptom last?"
         />
 
+        <Input
+          label="Date & Time"
+          type="datetime-local"
+          value={loggedAt}
+          onChange={(e) => setLoggedAt(e.target.value)}
+          helperText="When did this symptom occur?"
+        />
+
         <Textarea
           label="Notes"
           placeholder="Any additional details about this flare..."
@@ -109,15 +150,21 @@ function LogSymptom() {
           onChange={setActivityLevel}
         />
 
-        <Button
-          type="submit"
-          size="lg"
-          fullWidth
-          isLoading={submitting}
-          disabled={!selectedSymptom}
-        >
-          Log Symptom
-        </Button>
+        <div className="flex items-center justify-between">
+          <SaveFavoriteToggle
+            label={label}
+            isFavorite={isFav}
+            onToggle={handleFavoriteToggle}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            isLoading={submitting}
+            disabled={!selectedSymptom}
+          >
+            Log Symptom
+          </Button>
+        </div>
       </form>
     </div>
   );

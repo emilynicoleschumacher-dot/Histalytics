@@ -6,11 +6,16 @@ import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
 import { IngredientInput } from "~/components/IngredientInput";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
-import { logMeal, type ActivityLevel } from "~/lib/data-store";
+import { logMeal, saveFavorite, isFavorite, type ActivityLevel } from "~/lib/data-store";
+import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-meal")({
   component: LogMeal,
 });
+
+function nowISO() {
+  return new Date().toISOString().slice(0, 16);
+}
 
 function LogMeal() {
   const navigate = useNavigate();
@@ -20,8 +25,31 @@ function LogMeal() {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(null);
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const label = foodName.trim();
+  const isFav = label ? isFavorite("meal", label) : false;
+
+  const handleFavoriteToggle = () => {
+    if (!label) return;
+    saveFavorite({
+      label,
+      type: "meal",
+      foodName: label,
+      mealType: mealType || undefined,
+      notes: notes || undefined,
+    });
+  };
+
+  const handleFavoriteSelect = (fav: { foodName?: string; mealType?: string; notes?: string }) => {
+    if (fav.foodName) {
+      setFoodName(fav.foodName);
+      if (fav.mealType) setMealType(fav.mealType);
+      if (fav.notes) setNotes(fav.notes);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +62,7 @@ function LogMeal() {
       ingredients: ingredients.length > 0 ? ingredients : null,
       activityLevel,
       notes: notes || null,
+      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
     });
     setSubmitting(false);
     setSuccess(true);
@@ -44,6 +73,7 @@ function LogMeal() {
       setPortionSize("");
       setIngredients([]);
       setNotes("");
+      setLoggedAt(nowISO());
     }, 2000);
   };
 
@@ -59,6 +89,8 @@ function LogMeal() {
           ✓ Meal logged successfully!
         </div>
       )}
+
+      <FavoritesBar type="meal" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card elevated>
@@ -98,6 +130,14 @@ function LogMeal() {
                 onChange={(e) => setPortionSize(e.target.value)}
               />
             </div>
+
+            <Input
+              label="Date & Time"
+              type="datetime-local"
+              value={loggedAt}
+              onChange={(e) => setLoggedAt(e.target.value)}
+              helperText="When did you eat this?"
+            />
           </CardBody>
         </Card>
 
@@ -138,24 +178,30 @@ function LogMeal() {
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <div className="flex gap-3">
-          <Button
-            type="submit"
-            size="lg"
-            className="flex-1"
-            isLoading={submitting}
-            disabled={!foodName.trim()}
-          >
-            Log Meal
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={() => navigate({ to: "/log-product" })}
-          >
-            Log product
-          </Button>
+        <div className="flex items-center justify-between">
+          <SaveFavoriteToggle
+            label={label}
+            isFavorite={isFav}
+            onToggle={handleFavoriteToggle}
+          />
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              size="lg"
+              isLoading={submitting}
+              disabled={!foodName.trim()}
+            >
+              Log Meal
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={() => navigate({ to: "/log-product" })}
+            >
+              Log product
+            </Button>
+          </div>
         </div>
       </form>
     </div>

@@ -4,11 +4,16 @@ import { PageHeader } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-import { logPersonalCareProduct } from "~/lib/data-store";
+import { logPersonalCareProduct, saveFavorite, isFavorite } from "~/lib/data-store";
+import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-product")({
   component: LogProduct,
 });
+
+function nowISO() {
+  return new Date().toISOString().slice(0, 16);
+}
 
 function LogProduct() {
   const [productName, setProductName] = useState("");
@@ -16,8 +21,33 @@ function LogProduct() {
   const [productType, setProductType] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const label = productName.trim();
+  const isFav = label ? isFavorite("product", label) : false;
+
+  const handleFavoriteToggle = () => {
+    if (!label) return;
+    saveFavorite({
+      label,
+      type: "product",
+      productName: label,
+      productType: productType || undefined,
+      brand: brand.trim() || undefined,
+      notes: notes.trim() || undefined,
+    });
+  };
+
+  const handleFavoriteSelect = (fav: { productName?: string; brand?: string; productType?: string; notes?: string }) => {
+    if (fav.productName) {
+      setProductName(fav.productName);
+      if (fav.brand) setBrand(fav.brand);
+      if (fav.productType) setProductType(fav.productType);
+      if (fav.notes) setNotes(fav.notes);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +59,7 @@ function LogProduct() {
       productType: productType || "other",
       ingredients: ingredients || null,
       notes: notes || null,
+      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
     });
     setSubmitting(false);
     setSuccess(true);
@@ -39,6 +70,7 @@ function LogProduct() {
       setProductType("");
       setIngredients("");
       setNotes("");
+      setLoggedAt(nowISO());
     }, 2000);
   };
 
@@ -54,6 +86,8 @@ function LogProduct() {
           ✓ Product logged successfully!
         </div>
       )}
+
+      <FavoritesBar type="product" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
@@ -90,6 +124,14 @@ function LogProduct() {
           />
         </div>
 
+        <Input
+          label="Date & Time"
+          type="datetime-local"
+          value={loggedAt}
+          onChange={(e) => setLoggedAt(e.target.value)}
+          helperText="When did you use this product?"
+        />
+
         <Textarea
           label="Ingredients List"
           placeholder="Paste the full ingredients list from the label. This helps us identify trigger ingredients."
@@ -105,15 +147,21 @@ function LogProduct() {
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <Button
-          type="submit"
-          size="lg"
-          fullWidth
-          isLoading={submitting}
-          disabled={!productName.trim()}
-        >
-          Log Product
-        </Button>
+        <div className="flex items-center justify-between">
+          <SaveFavoriteToggle
+            label={label}
+            isFavorite={isFav}
+            onToggle={handleFavoriteToggle}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            isLoading={submitting}
+            disabled={!productName.trim()}
+          >
+            Log Product
+          </Button>
+        </div>
       </form>
 
       {/* Quick-reference: Common MCAS-triggering ingredients */}
