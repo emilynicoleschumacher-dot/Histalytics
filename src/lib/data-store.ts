@@ -213,6 +213,27 @@ export function getAllSymptoms(): SymptomLog[] {
   return getStore<SymptomLog[]>("symptom_logs", []);
 }
 
+export function getSymptomById(id: string): SymptomLog | undefined {
+  return getStore<SymptomLog[]>("symptom_logs", []).find((s) => s.id === id);
+}
+
+export function updateSymptom(id: string, data: Partial<Omit<SymptomLog, "id">>): boolean {
+  const logs = getStore<SymptomLog[]>("symptom_logs", []);
+  const idx = logs.findIndex((s) => s.id === id);
+  if (idx === -1) return false;
+  logs[idx] = { ...logs[idx], ...data };
+  setStore("symptom_logs", logs);
+  return true;
+}
+
+export function deleteSymptom(id: string): boolean {
+  const logs = getStore<SymptomLog[]>("symptom_logs", []);
+  const filtered = logs.filter((s) => s.id !== id);
+  if (filtered.length === logs.length) return false;
+  setStore("symptom_logs", filtered);
+  return true;
+}
+
 /* ─── Meal Logging ─── */
 
 export async function logMeal(data: {
@@ -285,6 +306,27 @@ export function getAllMeals(): MealLog[] {
   return getStore<MealLog[]>("meal_logs", []);
 }
 
+export function getMealById(id: string): MealLog | undefined {
+  return getStore<MealLog[]>("meal_logs", []).find((m) => m.id === id);
+}
+
+export function updateMeal(id: string, data: Partial<Omit<MealLog, "id">>): boolean {
+  const logs = getStore<MealLog[]>("meal_logs", []);
+  const idx = logs.findIndex((m) => m.id === id);
+  if (idx === -1) return false;
+  logs[idx] = { ...logs[idx], ...data };
+  setStore("meal_logs", logs);
+  return true;
+}
+
+export function deleteMeal(id: string): boolean {
+  const logs = getStore<MealLog[]>("meal_logs", []);
+  const filtered = logs.filter((m) => m.id !== id);
+  if (filtered.length === logs.length) return false;
+  setStore("meal_logs", filtered);
+  return true;
+}
+
 /* ─── Supplement Logging ─── */
 
 export async function logSupplement(data: {
@@ -354,6 +396,27 @@ export function getAllSupplements(): SupplementLog[] {
   return getStore<SupplementLog[]>("supplement_logs", []);
 }
 
+export function getSupplementById(id: string): SupplementLog | undefined {
+  return getStore<SupplementLog[]>("supplement_logs", []).find((s) => s.id === id);
+}
+
+export function updateSupplement(id: string, data: Partial<Omit<SupplementLog, "id">>): boolean {
+  const logs = getStore<SupplementLog[]>("supplement_logs", []);
+  const idx = logs.findIndex((s) => s.id === id);
+  if (idx === -1) return false;
+  logs[idx] = { ...logs[idx], ...data };
+  setStore("supplement_logs", logs);
+  return true;
+}
+
+export function deleteSupplement(id: string): boolean {
+  const logs = getStore<SupplementLog[]>("supplement_logs", []);
+  const filtered = logs.filter((s) => s.id !== id);
+  if (filtered.length === logs.length) return false;
+  setStore("supplement_logs", filtered);
+  return true;
+}
+
 /* ─── Dashboard Stats ─── */
 
 export function getDashboardStats() {
@@ -399,6 +462,8 @@ export function getFullHistory() {
   return {
     symptoms: getStore<SymptomLog[]>("symptom_logs", []),
     meals: getStore<MealLog[]>("meal_logs", []),
+    supplements: getStore<SupplementLog[]>("supplement_logs", []),
+    products: getStore<ProductLog[]>("product_logs", []),
   };
 }
 
@@ -591,6 +656,27 @@ export function logPersonalCareProduct(data: {
   }
 
   return entry;
+}
+
+export function getProductById(id: string): ProductLog | undefined {
+  return getStore<ProductLog[]>("product_logs", []).find((p) => p.id === id);
+}
+
+export function updateProduct(id: string, data: Partial<Omit<ProductLog, "id">>): boolean {
+  const logs = getStore<ProductLog[]>("product_logs", []);
+  const idx = logs.findIndex((p) => p.id === id);
+  if (idx === -1) return false;
+  logs[idx] = { ...logs[idx], ...data };
+  setStore("product_logs", logs);
+  return true;
+}
+
+export function deleteProduct(id: string): boolean {
+  const logs = getStore<ProductLog[]>("product_logs", []);
+  const filtered = logs.filter((p) => p.id !== id);
+  if (filtered.length === logs.length) return false;
+  setStore("product_logs", filtered);
+  return true;
 }
 
 export function getIngredientHistory() {
@@ -885,7 +971,7 @@ export function getIngredientCorrelations(range: TimeRange): IngredientCorrelati
           month: "short",
           day: "numeric",
         });
-        return `${dateLabel} — Flare day (avg ${avgSev}/10)`;
+        return `${dateLabel} ��� Flare day (avg ${avgSev}/10)`;
       });
 
       return {

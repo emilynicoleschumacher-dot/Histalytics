@@ -1,14 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { PageHeader, SeveritySlider } from "~/components/shared";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-import { getSymptomSystems, logSymptom, saveFavorite, isFavorite, type ActivityLevel } from "~/lib/data-store";
+import {
+  getSymptomSystems,
+  logSymptom,
+  saveFavorite,
+  removeFavorite,
+  getFavorites,
+  isFavorite,
+  getSymptomById,
+  updateSymptom,
+  type ActivityLevel,
+} from "~/lib/data-store";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-symptom")({
   component: LogSymptom,
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
 });
 
 const symptomSystems = getSymptomSystems();
@@ -18,6 +31,9 @@ function nowISO() {
 }
 
 function LogSymptom() {
+  const navigate = useNavigate();
+  const { edit } = useSearch({ from: Route.id });
+
   const [selectedSystem, setSelectedSystem] = useState("");
   const [selectedSymptom, setSelectedSymptom] = useState("");
   const [severity, setSeverity] = useState(5);
@@ -27,6 +43,24 @@ function LogSymptom() {
   const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [favoriteVersion, setFavoriteVersion] = useState(0);
+  const [editId, setEditId] = useState<string | undefined>(edit);
+
+  // Load existing entry for editing
+  useEffect(() => {
+    if (editId) {
+      const entry = getSymptomById(editId);
+      if (entry) {
+        setSelectedSystem(entry.bodySystem);
+        setSelectedSymptom(entry.symptomId);
+        setSeverity(entry.severity);
+        if (entry.durationMinutes) setDuration(`${entry.durationMinutes} min`);
+        if (entry.activityLevel) setActivityLevel(entry.activityLevel);
+        if (entry.notes) setNotes(entry.notes);
+        setLoggedAt(entry.loggedAt.slice(0, 16));
+      }
+    }
+  }, [editId]);
 
   const currentSystem = symptomSystems.find((s) => s.system === selectedSystem);
   const currentSymptom = currentSystem?.symptoms.find((s) => s.id === selectedSymptom);
@@ -36,21 +70,32 @@ function LogSymptom() {
 
   const handleFavoriteToggle = () => {
     if (!label || !selectedSystem || !selectedSymptom) return;
-    saveFavorite({
-      label,
-      type: "symptom",
-      symptomId: selectedSymptom,
-      symptomName: label,
-      bodySystem: selectedSystem,
-      notes: notes || undefined,
-    });
+    if (isFav) {
+      const favs = getFavorites().filter((f) => f.type === "symptom" && f.label === label);
+      favs.forEach((f) => removeFavorite(f.id));
+    } else {
+      saveFavorite({
+        label,
+        type: "symptom",
+        symptomId: selectedSymptom,
+        symptomName: label,
+        bodySystem: selectedSystem,
+        severity,
+        durationMinutes: duration ? parseInt(duration.match(/\d+/)?.[0] || "0", 10) || null : null,
+        notes: notes || undefined,
+      });
+    }
+    setFavoriteVersion((v) => v + 1);
   };
 
-  const handleFavoriteSelect = (fav: { symptomName?: string; symptomId?: string; bodySystem?: string; notes?: string }) => {
+  const handleFavoriteSelect = (fav: { symptomName?: string; symptomId?: string; bodySystem?: string; severity?: number; durationMinutes?: number | null; notes?: string }) => {
     if (fav.symptomId && fav.bodySystem) {
       setSelectedSystem(fav.bodySystem);
       setSelectedSymptom(fav.symptomId);
+      if (fav.severity !== undefined) setSeverity(fav.severity);
+      if (fav.durationMinutes !== undefined && fav.durationMinutes !== null) setDuration(`${fav.durationMinutes} min`);
       if (fav.notes) setNotes(fav.notes);
+      setFavoriteVersion((v) => v + 1);
     }
   };
 
@@ -58,7 +103,8 @@ function LogSymptom() {
     e.preventDefault();
     if (!selectedSymptom || !currentSymptom) return;
     setSubmitting(true);
-    await logSymptom({
+
+    const data = {
       symptomId: selectedSymptom,
       symptomName: currentSymptom.name,
       bodySystem: selectedSystem,
@@ -67,30 +113,48 @@ function LogSymptom() {
       activityLevel,
       notes: notes || null,
       loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
-    });
+    };
+
+    if (editId) {
+      updateSymptom(editId, data);
+    } else {
+      await logSymptom(data);
+    }
+
     setSubmitting(false);
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
-      setSelectedSystem("");
-      setSelectedSymptom("");
-      setSeverity(5);
-      setDuration("");
-      setNotes("");
-      setLoggedAt(nowISO());
+      if (editId) {
+        navigate({ to: "/history" });
+      } else {
+        setEditId(undefined);
+        setSelectedSystem("");
+        setSelectedSymptom("");
+        setSeverity(5);
+        setDuration("");
+        setNotes("");
+        setLoggedAt(nowISO());
+      }
     }, 2000);
   };
 
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader
-        title="Log Symptom"
-        description="Record a symptom flare — what, when, and how bad"
-      />
+        title={editId ? "Edit Symptom" : "Log Symptom"}
+        description={editId ? "Update a logged symptom entry." : "Record a symptom flare — what, when, and how bad"}
+      >
+        {editId && (
+          <Button variant="ghost" onClick={() => navigate({ to: "/history" })}>
+            Cancel
+          </Button>
+        )}
+      </PageHeader>
 
       {success && (
         <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Symptom logged successfully!
+          ✓ Symptom {editId ? "updated" : "logged"} successfully!
         </div>
       )}
 
@@ -162,7 +226,7 @@ function LogSymptom() {
             isLoading={submitting}
             disabled={!selectedSymptom}
           >
-            Log Symptom
+            {editId ? "Update Symptom" : "Log Symptom"}
           </Button>
         </div>
       </form>

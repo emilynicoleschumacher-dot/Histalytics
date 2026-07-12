@@ -1,14 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { PageHeader } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea } from "~/components/Input";
-import { logSupplement, saveFavorite, isFavorite } from "~/lib/data-store";
+import {
+  logSupplement,
+  saveFavorite,
+  removeFavorite,
+  getFavorites,
+  isFavorite,
+  getSupplementById,
+  updateSupplement,
+} from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-supplement")({
   component: LogSupplement,
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
 });
 
 const COMMON_ADDITIVES = [
@@ -31,6 +42,9 @@ function nowISO() {
 }
 
 function LogSupplement() {
+  const navigate = useNavigate();
+  const { edit } = useSearch({ from: Route.id });
+
   const [supplementName, setSupplementName] = useState("");
   const [brand, setBrand] = useState("");
   const [dosage, setDosage] = useState("");
@@ -39,20 +53,43 @@ function LogSupplement() {
   const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [favoriteVersion, setFavoriteVersion] = useState(0);
+  const [editId, setEditId] = useState<string | undefined>(edit);
+
+  // Load existing entry for editing
+  useEffect(() => {
+    if (editId) {
+      const entry = getSupplementById(editId);
+      if (entry) {
+        setSupplementName(entry.supplementName);
+        if (entry.brand) setBrand(entry.brand);
+        if (entry.dosage) setDosage(entry.dosage);
+        if (entry.ingredients) setIngredients(entry.ingredients);
+        if (entry.notes) setNotes(entry.notes);
+        setLoggedAt(entry.loggedAt.slice(0, 16));
+      }
+    }
+  }, [editId]);
 
   const label = supplementName.trim();
   const isFav = label ? isFavorite("supplement", label) : false;
 
   const handleFavoriteToggle = () => {
     if (!label) return;
-    saveFavorite({
-      label,
-      type: "supplement",
-      supplementName: label,
-      brand: brand.trim() || undefined,
-      dosage: dosage.trim() || undefined,
-      notes: notes.trim() || undefined,
-    });
+    if (isFav) {
+      const favs = getFavorites().filter((f) => f.type === "supplement" && f.label === label);
+      favs.forEach((f) => removeFavorite(f.id));
+    } else {
+      saveFavorite({
+        label,
+        type: "supplement",
+        supplementName: label,
+        brand: brand.trim() || undefined,
+        dosage: dosage.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+    }
+    setFavoriteVersion((v) => v + 1);
   };
 
   const handleFavoriteSelect = (fav: { supplementName?: string; brand?: string; dosage?: string; notes?: string }) => {
@@ -61,6 +98,7 @@ function LogSupplement() {
       if (fav.brand) setBrand(fav.brand);
       if (fav.dosage) setDosage(fav.dosage);
       if (fav.notes) setNotes(fav.notes);
+      setFavoriteVersion((v) => v + 1);
     }
   };
 
@@ -68,38 +106,56 @@ function LogSupplement() {
     e.preventDefault();
     if (!supplementName.trim()) return;
     setSubmitting(true);
-    try {
-      await logSupplement({
-        supplementName: supplementName.trim(),
-        brand: brand.trim() || null,
-        dosage: dosage.trim() || null,
-        ingredients: ingredients.trim() || null,
-        notes: notes.trim() || null,
-        loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
-      });
-      setSuccess(true);
-      setSupplementName("");
-      setBrand("");
-      setDosage("");
-      setIngredients("");
-      setNotes("");
-      setLoggedAt(nowISO());
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error("Failed to log supplement:", err);
+
+    const data = {
+      supplementName: supplementName.trim(),
+      brand: brand.trim() || null,
+      dosage: dosage.trim() || null,
+      ingredients: ingredients.trim() || null,
+      notes: notes.trim() || null,
+      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
+    };
+
+    if (editId) {
+      updateSupplement(editId, data);
+    } else {
+      await logSupplement(data);
     }
+
     setSubmitting(false);
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+      if (editId) {
+        navigate({ to: "/history" });
+      } else {
+        setEditId(undefined);
+        setSupplementName("");
+        setBrand("");
+        setDosage("");
+        setIngredients("");
+        setNotes("");
+        setLoggedAt(nowISO());
+      }
+    }, 3000);
   };
 
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader
-        title="Log Supplement"
-        description="Track supplements, vitamins, and medications. Additives and fillers can be hidden MCAS triggers."
-      />
+        title={editId ? "Edit Supplement" : "Log Supplement"}
+        description={editId ? "Update a logged supplement entry." : "Track supplements, vitamins, and medications. Additives and fillers can be hidden MCAS triggers."}
+      >
+        {editId && (
+          <Button variant="ghost" onClick={() => navigate({ to: "/history" })}>
+            Cancel
+          </Button>
+        )}
+      </PageHeader>
+
       {success && (
         <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Supplement logged successfully! Ingredients have been added to your tracking.
+          ✓ Supplement {editId ? "updated" : "logged"} successfully!
         </div>
       )}
 
@@ -159,7 +215,7 @@ function LogSupplement() {
             isLoading={submitting}
             disabled={!supplementName.trim()}
           >
-            Log Supplement
+            {editId ? "Update Supplement" : "Log Supplement"}
           </Button>
         </div>
       </form>

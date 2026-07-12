@@ -1,14 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { PageHeader } from "~/components/shared";
 import { Card, CardBody } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
-import { logPersonalCareProduct, saveFavorite, isFavorite } from "~/lib/data-store";
+import {
+  logPersonalCareProduct,
+  saveFavorite,
+  removeFavorite,
+  getFavorites,
+  isFavorite,
+  getProductById,
+  updateProduct,
+} from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-product")({
   component: LogProduct,
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
 });
 
 function nowISO() {
@@ -16,6 +27,9 @@ function nowISO() {
 }
 
 function LogProduct() {
+  const navigate = useNavigate();
+  const { edit } = useSearch({ from: Route.id });
+
   const [productName, setProductName] = useState("");
   const [brand, setBrand] = useState("");
   const [productType, setProductType] = useState("");
@@ -24,20 +38,43 @@ function LogProduct() {
   const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [favoriteVersion, setFavoriteVersion] = useState(0);
+  const [editId, setEditId] = useState<string | undefined>(edit);
+
+  // Load existing entry for editing
+  useEffect(() => {
+    if (editId) {
+      const entry = getProductById(editId);
+      if (entry) {
+        setProductName(entry.productName);
+        if (entry.brand) setBrand(entry.brand);
+        if (entry.productType) setProductType(entry.productType);
+        if (entry.ingredients) setIngredients(entry.ingredients);
+        if (entry.notes) setNotes(entry.notes);
+        setLoggedAt(entry.loggedAt.slice(0, 16));
+      }
+    }
+  }, [editId]);
 
   const label = productName.trim();
   const isFav = label ? isFavorite("product", label) : false;
 
   const handleFavoriteToggle = () => {
     if (!label) return;
-    saveFavorite({
-      label,
-      type: "product",
-      productName: label,
-      productType: productType || undefined,
-      brand: brand.trim() || undefined,
-      notes: notes.trim() || undefined,
-    });
+    if (isFav) {
+      const favs = getFavorites().filter((f) => f.type === "product" && f.label === label);
+      favs.forEach((f) => removeFavorite(f.id));
+    } else {
+      saveFavorite({
+        label,
+        type: "product",
+        productName: label,
+        productType: productType || undefined,
+        brand: brand.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+    }
+    setFavoriteVersion((v) => v + 1);
   };
 
   const handleFavoriteSelect = (fav: { productName?: string; brand?: string; productType?: string; notes?: string }) => {
@@ -46,6 +83,7 @@ function LogProduct() {
       if (fav.brand) setBrand(fav.brand);
       if (fav.productType) setProductType(fav.productType);
       if (fav.notes) setNotes(fav.notes);
+      setFavoriteVersion((v) => v + 1);
     }
   };
 
@@ -53,37 +91,56 @@ function LogProduct() {
     e.preventDefault();
     if (!productName.trim()) return;
     setSubmitting(true);
-    logPersonalCareProduct({
+
+    const data = {
       productName: productName.trim(),
       brand: brand || null,
       productType: productType || "other",
       ingredients: ingredients || null,
       notes: notes || null,
       loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
-    });
+    };
+
+    if (editId) {
+      updateProduct(editId, data);
+    } else {
+      logPersonalCareProduct(data);
+    }
+
     setSubmitting(false);
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
-      setProductName("");
-      setBrand("");
-      setProductType("");
-      setIngredients("");
-      setNotes("");
-      setLoggedAt(nowISO());
+      if (editId) {
+        navigate({ to: "/history" });
+      } else {
+        setEditId(undefined);
+        setProductName("");
+        setBrand("");
+        setProductType("");
+        setIngredients("");
+        setNotes("");
+        setLoggedAt(nowISO());
+      }
     }, 2000);
   };
 
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader
-        title="Log Personal Care Product"
-        description="Track skincare, toiletries, and household products for ingredient triggers."
-      />
+        title={editId ? "Edit Personal Care Product" : "Log Personal Care Product"}
+        description={editId ? "Update a logged product entry." : "Track skincare, toiletries, and household products for ingredient triggers."}
+      >
+        {editId && (
+          <Button variant="ghost" onClick={() => navigate({ to: "/history" })}>
+            Cancel
+          </Button>
+        )}
+      </PageHeader>
 
       {success && (
         <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Product logged successfully!
+          ✓ Product {editId ? "updated" : "logged"} successfully!
         </div>
       )}
 
@@ -159,7 +216,7 @@ function LogProduct() {
             isLoading={submitting}
             disabled={!productName.trim()}
           >
-            Log Product
+            {editId ? "Update Product" : "Log Product"}
           </Button>
         </div>
       </form>

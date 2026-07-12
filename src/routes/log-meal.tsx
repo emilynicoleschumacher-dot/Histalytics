@@ -1,16 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { PageHeader } from "~/components/shared";
 import { Card, CardBody, CardHeader } from "~/components/Card";
 import { Button } from "~/components/Button";
 import { Input, Textarea, Select } from "~/components/Input";
 import { IngredientInput } from "~/components/IngredientInput";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
-import { logMeal, saveFavorite, isFavorite, type ActivityLevel } from "~/lib/data-store";
+import {
+  logMeal,
+  saveFavorite,
+  removeFavorite,
+  getFavorites,
+  isFavorite,
+  getMealById,
+  updateMeal,
+  type ActivityLevel,
+} from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
 export const Route = createFileRoute("/log-meal")({
   component: LogMeal,
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
 });
 
 function nowISO() {
@@ -19,6 +31,8 @@ function nowISO() {
 
 function LogMeal() {
   const navigate = useNavigate();
+  const { edit } = useSearch({ from: Route.id });
+
   const [foodName, setFoodName] = useState("");
   const [mealType, setMealType] = useState("");
   const [portionSize, setPortionSize] = useState("");
@@ -28,19 +42,43 @@ function LogMeal() {
   const [loggedAt, setLoggedAt] = useState(nowISO());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [favoriteVersion, setFavoriteVersion] = useState(0);
+  const [editId, setEditId] = useState<string | undefined>(edit);
+
+  // Load existing entry for editing
+  useEffect(() => {
+    if (editId) {
+      const entry = getMealById(editId);
+      if (entry) {
+        setFoodName(entry.foodName);
+        if (entry.mealType) setMealType(entry.mealType);
+        if (entry.portionSize) setPortionSize(entry.portionSize);
+        if (entry.ingredients) setIngredients(entry.ingredients);
+        if (entry.activityLevel) setActivityLevel(entry.activityLevel);
+        if (entry.notes) setNotes(entry.notes);
+        setLoggedAt(entry.loggedAt.slice(0, 16));
+      }
+    }
+  }, [editId]);
 
   const label = foodName.trim();
   const isFav = label ? isFavorite("meal", label) : false;
 
   const handleFavoriteToggle = () => {
     if (!label) return;
-    saveFavorite({
-      label,
-      type: "meal",
-      foodName: label,
-      mealType: mealType || undefined,
-      notes: notes || undefined,
-    });
+    if (isFav) {
+      const favs = getFavorites().filter((f) => f.type === "meal" && f.label === label);
+      favs.forEach((f) => removeFavorite(f.id));
+    } else {
+      saveFavorite({
+        label,
+        type: "meal",
+        foodName: label,
+        mealType: mealType || undefined,
+        notes: notes || undefined,
+      });
+    }
+    setFavoriteVersion((v) => v + 1);
   };
 
   const handleFavoriteSelect = (fav: { foodName?: string; mealType?: string; notes?: string }) => {
@@ -48,6 +86,7 @@ function LogMeal() {
       setFoodName(fav.foodName);
       if (fav.mealType) setMealType(fav.mealType);
       if (fav.notes) setNotes(fav.notes);
+      setFavoriteVersion((v) => v + 1);
     }
   };
 
@@ -55,7 +94,8 @@ function LogMeal() {
     e.preventDefault();
     if (!foodName.trim()) return;
     setSubmitting(true);
-    await logMeal({
+
+    const data = {
       foodName: foodName.trim(),
       mealType: mealType || null,
       portionSize: portionSize || null,
@@ -63,30 +103,48 @@ function LogMeal() {
       activityLevel,
       notes: notes || null,
       loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
-    });
+    };
+
+    if (editId) {
+      updateMeal(editId, data);
+    } else {
+      await logMeal(data);
+    }
+
     setSubmitting(false);
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
-      setFoodName("");
-      setMealType("");
-      setPortionSize("");
-      setIngredients([]);
-      setNotes("");
-      setLoggedAt(nowISO());
+      if (editId) {
+        navigate({ to: "/history" });
+      } else {
+        setEditId(undefined);
+        setFoodName("");
+        setMealType("");
+        setPortionSize("");
+        setIngredients([]);
+        setNotes("");
+        setLoggedAt(nowISO());
+      }
     }, 2000);
   };
 
   return (
     <div className="container-narrow py-8 max-w-2xl mx-auto">
       <PageHeader
-        title="Log Meal"
-        description="Track what you ate to identify trigger foods and ingredients."
-      />
+        title={editId ? "Edit Meal" : "Log Meal"}
+        description={editId ? "Update a logged meal entry." : "Track what you ate to identify trigger foods and ingredients."}
+      >
+        {editId && (
+          <Button variant="ghost" onClick={() => navigate({ to: "/history" })}>
+            Cancel
+          </Button>
+        )}
+      </PageHeader>
 
       {success && (
         <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-          ✓ Meal logged successfully!
+          ✓ Meal {editId ? "updated" : "logged"} successfully!
         </div>
       )}
 
@@ -191,16 +249,18 @@ function LogMeal() {
               isLoading={submitting}
               disabled={!foodName.trim()}
             >
-              Log Meal
+              {editId ? "Update Meal" : "Log Meal"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="lg"
-              onClick={() => navigate({ to: "/log-product" })}
-            >
-              Log product
-            </Button>
+            {!editId && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                onClick={() => navigate({ to: "/log-product" })}
+              >
+                Log product
+              </Button>
+            )}
           </div>
         </div>
       </form>

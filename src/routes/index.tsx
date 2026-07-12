@@ -95,7 +95,7 @@ function Home() {
                 <span className="text-text-muted">Built by the MCAS community, for the MCAS community</span>
               </div>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link to="/dashboard">
+                <Link to="/sign-up">
                   <Button size="lg" className="shadow-elevated">
                     Get started — free
                   </Button>
