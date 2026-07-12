@@ -161,12 +161,12 @@ export function SymptomTrendChart({ data, className = "" }: SymptomTrendChartPro
         ))}
       </div>
 
-      {/* SVG Chart */}
-      <div className="w-full overflow-x-auto">
+      {/* SVG Chart — responsive, no horizontal scroll */}
+      <div className="w-full overflow-hidden">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full max-w-full"
-          style={{ minWidth: `${width}px`, maxHeight: `${height}px` }}
+          className="w-full h-auto"
+          style={{ maxHeight: `${height}px` }}
           role="img"
           aria-label="Symptom severity trends over time"
         >
