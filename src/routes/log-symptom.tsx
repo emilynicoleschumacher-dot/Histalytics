@@ -34,7 +34,7 @@ function LogSymptom() {
       symptomName: currentSymptom.name,
       bodySystem: selectedSystem,
       severity,
-      durationMinutes: duration ? parseInt(duration) : null,
+      durationMinutes: duration ? parseInt(duration.match(/\d+/)?.[0] || "0", 10) || null : null,
       activityLevel,
       notes: notes || null,
     });
@@ -90,8 +90,8 @@ function LogSymptom() {
 
         <Input
           label="Duration"
-          type="number"
-          placeholder="e.g. 3 hours"
+          type="text"
+          placeholder="e.g. 3 hours or 30 minutes"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           helperText="How long did the symptom last?"

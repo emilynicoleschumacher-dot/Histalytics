@@ -101,7 +101,7 @@ const navConfig: NavItem[] = [
   { path: "/dashboard", label: "Dashboard", icon: icons.dashboard },
   { type: "dropdown", label: "Log", icon: icons.plus, children: logChildren },
   { path: "/insights", label: "Insights", icon: insightsIcon },
-  { path: "/recommendations", label: "Products", icon: icons.lightbulb },
+  { path: "/recommendations", label: "References", icon: icons.lightbulb },
   { path: "/history", label: "History", icon: icons.calendar },
   { path: "/community", label: "Community", icon: icons.community },
 ];

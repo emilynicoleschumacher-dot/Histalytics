@@ -20,8 +20,8 @@ function Recommendations() {
   return (
     <div className="container-narrow py-8">
       <PageHeader
-        title="Product Recommendations"
-        description="Personalized product matches based on your logged symptoms"
+        title="Product References"
+        description="Educational reference of products matched to your symptom profile"
       />
 
       {/* Medical disclaimer */}
