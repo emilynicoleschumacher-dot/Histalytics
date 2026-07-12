@@ -143,27 +143,6 @@ export function SymptomTrendChart({ data, className = "" }: SymptomTrendChartPro
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
-  // Build paths
-  const paths = symptomNames.map((name, si) => {
-    const points = data.map((d, i) => {
-      const found = d.values.find((v) => v.symptomName === name);
-      const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartW;
-      const y = padding.top + chartH - (found ? (found.severity / maxSeverity) * chartH : 0);
-      return { x, y, exists: !!found };
-    });
-
-    const validPoints = points.filter((p) => p.exists);
-    if (validPoints.length === 0) return null;
-
-    let pathD = "";
-    validPoints.forEach((p, i) => {
-      if (i === 0) pathD += `M ${p.x} ${p.y}`;
-      else pathD += ` L ${p.x} ${p.y}`;
-    });
-
-    return { name, color: SYMPTOM_COLORS[si % SYMPTOM_COLORS.length], pathD, points };
-  }).filter(Boolean);
-
   // Y-axis ticks
   const yTicks = [0, 2, 4, 6, 8, 10];
 
@@ -217,44 +196,29 @@ export function SymptomTrendChart({ data, className = "" }: SymptomTrendChartPro
           })}
 
           {/* Data lines */}
-          {paths.map((path) =>
-            path ? (
-              <path
-                key={path.name}
-                d={path.pathD}
-                fill="none"
-                stroke={path.color}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="transition-all duration-300"
-              />
-            ) : null
-          )}
-
-          {/* Data dots on hover */}
-          {paths.map((path) =>
-            path
-              ? (
-                <g key={`dots-${path.name}`} className="group">
-                  {path.points
-                    .filter((p) => p.exists)
-                    .map((p, i) => (
-                      <circle
-                        key={`${path.name}-${i}`}
-                        cx={p.x}
-                        cy={p.y}
-                        r="3"
-                        fill={path.color}
-                        stroke="white"
-                        strokeWidth="2"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      />
-                    ))}
-                </g>
-              )
-              : null
-          )}
+          {symptomNames.map((name, si) => {
+            const lineColor = SYMPTOM_COLORS[si % SYMPTOM_COLORS.length];
+            const pts = data.map((d, i) => {
+              const found = d.values.find((v) => v.symptomName === name);
+              const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartW;
+              const y = padding.top + chartH - (found ? (found.severity / maxSeverity) * chartH : 0);
+              return { x, y, exists: !!found };
+            }).filter(p => p.exists);
+            if (pts.length === 0) return null;
+            let d = "";
+            pts.forEach((p, i) => {
+              if (i === 0) d += `M ${p.x} ${p.y}`;
+              else d += ` L ${p.x} ${p.y}`;
+            });
+            return (
+              <g key={name}>
+                <path d={d} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                {pts.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r="3" fill={lineColor} stroke="white" strokeWidth="2" />
+                ))}
+              </g>
+            );
+          })}
         </svg>
       </div>
 
