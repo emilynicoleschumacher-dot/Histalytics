@@ -55,7 +55,7 @@ const howItWorks = [
   {
     step: "03",
     title: "Learn About What Helps",
-    description: "Get access to researched backed reference information based on your symptoms to discuss with your provider.",
+    description: "Get access to research backed reference information based on your symptoms to discuss with your provider.",
   },
 ];
 
