@@ -161,8 +161,8 @@ export function SymptomTrendChart({ data, className = "" }: SymptomTrendChartPro
         ))}
       </div>
 
-      {/* SVG Chart — responsive, no horizontal scroll */}
-      <div className="w-full overflow-hidden">
+      {/* SVG Chart */}
+      <div className="w-full overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto"

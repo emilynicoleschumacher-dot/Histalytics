@@ -853,7 +853,14 @@ export function getSymptomTrends(range: TimeRange): TrendDayPoint[] {
     }
   }
 
-  return Object.values(byDay);
+  // Trim leading empty days so chart starts at first day with data
+  const allDays = Object.values(byDay);
+  const firstDataIdx = allDays.findIndex(d => d.values.length > 0);
+  if (firstDataIdx > 0) {
+    return allDays.slice(firstDataIdx);
+  }
+
+  return allDays;
 }
 
 /* ── Section 3: Flare Day Analysis ── */
@@ -905,6 +912,12 @@ export function getFlareDayAnalysis(range: TimeRange): {
       value: avgSeverity,
       isFlare: avgSeverity >= 6,
     });
+  }
+
+  // Trim leading empty days so chart starts at first day with data
+  const firstFlareIdx = flareData.findIndex(d => d.value > 0);
+  if (firstFlareIdx > 0) {
+    flareData.splice(0, firstFlareIdx);
   }
 
   const flareCount = flareData.filter((d) => d.isFlare).length;
