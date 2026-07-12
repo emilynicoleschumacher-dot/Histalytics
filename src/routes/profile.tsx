@@ -66,11 +66,34 @@ function Profile() {
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-teal-400" />
-                  Logged data stored in your browser (localStorage)
+                  Data stored securely — never shared or sold
                 </p>
               </div>
             </>
           )}
+        </CardBody>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <h2 className="text-lg font-semibold text-text-primary">Privacy</h2>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-3 text-sm text-text-secondary">
+            <p>
+              <strong>Your data is yours.</strong> Histalytics stores symptom logs, meals, and other health
+              data you enter so you can track your patterns over time.
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Your data is stored in a secure database (Neon Postgres)</li>
+              <li>We do <strong>not</strong> share, sell, or rent your data to anyone</li>
+              <li>Your data is not used for advertising or training AI models</li>
+              <li>You can delete your data at any time by contacting us</li>
+            </ul>
+            <p className="text-xs text-text-muted mt-2">
+              Last updated: July 2026 · Questions? Email privacy@histalytics.com
+            </p>
+          </div>
         </CardBody>
       </Card>
 
