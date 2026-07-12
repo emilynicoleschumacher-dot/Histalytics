@@ -163,31 +163,6 @@ export async function logSymptom(data: {
   notes?: string | null;
   loggedAt?: string | null;
 }): Promise<SymptomLog> {
-  // Try API first
-  const res = await apiFetch("symptoms", {
-    method: "POST",
-    body: JSON.stringify({
-      symptom_id: data.symptomId,
-      symptom_name: data.symptomName,
-      body_system: data.bodySystem,
-      severity: data.severity,
-      duration_minutes: data.durationMinutes,
-      notes: data.notes,
-    }),
-  });
-  if (res) {
-    const apiResult = await res.json();
-    return {
-      id: apiResult.id,
-      symptomId: data.symptomId,
-      symptomName: data.symptomName,
-      bodySystem: data.bodySystem,
-      severity: data.severity,
-      durationMinutes: data.durationMinutes ?? null,
-      notes: data.notes ?? null,
-      loggedAt: apiResult.logged_at,
-    };
-  }
   const logs = getStore<SymptomLog[]>("symptom_logs", []);
   const entry: SymptomLog = {
     id: generateId(),
@@ -202,6 +177,18 @@ export async function logSymptom(data: {
   };
   logs.unshift(entry);
   setStore("symptom_logs", logs);
+  // Background sync to API (non-blocking)
+  apiFetch("symptoms", {
+    method: "POST",
+    body: JSON.stringify({
+      symptom_id: data.symptomId,
+      symptom_name: data.symptomName,
+      body_system: data.bodySystem,
+      severity: data.severity,
+      duration_minutes: data.durationMinutes,
+      notes: data.notes,
+    }),
+  }).catch(() => {});
   return entry;
 }
 
@@ -245,28 +232,6 @@ export async function logMeal(data: {
   notes?: string | null;
   loggedAt?: string | null;
 }): Promise<MealLog> {
-  // Try API first
-  const res = await apiFetch("meals", {
-    method: "POST",
-    body: JSON.stringify({
-      food_name: data.foodName,
-      meal_type: data.mealType,
-      portion_size: data.portionSize,
-      notes: data.notes,
-    }),
-  });
-  if (res) {
-    const apiResult = await res.json();
-    return {
-      id: apiResult.id,
-      foodName: data.foodName,
-      mealType: data.mealType ?? null,
-      portionSize: data.portionSize ?? null,
-      ingredients: data.ingredients ?? null,
-      notes: data.notes ?? null,
-      loggedAt: apiResult.logged_at,
-    };
-  }
   const logs = getStore<MealLog[]>("meal_logs", []);
   const entry: MealLog = {
     id: generateId(),
@@ -294,6 +259,17 @@ export async function logMeal(data: {
       }
     }
   }
+
+  // Background sync to API
+  apiFetch("meals", {
+    method: "POST",
+    body: JSON.stringify({
+      food_name: data.foodName,
+      meal_type: data.mealType,
+      portion_size: data.portionSize,
+      notes: data.notes,
+    }),
+  }).catch(() => {});
 
   return entry;
 }
@@ -337,28 +313,6 @@ export async function logSupplement(data: {
   notes?: string | null;
   loggedAt?: string | null;
 }): Promise<SupplementLog> {
-  // Try API first
-  const res = await apiFetch("supplements", {
-    method: "POST",
-    body: JSON.stringify({
-      supplement_name: data.supplementName,
-      brand: data.brand,
-      dosage: data.dosage,
-      notes: data.notes,
-    }),
-  });
-  if (res) {
-    const apiResult = await res.json();
-    return {
-      id: apiResult.id,
-      supplementName: data.supplementName,
-      brand: data.brand ?? null,
-      dosage: data.dosage ?? null,
-      ingredients: data.ingredients ?? null,
-      notes: data.notes ?? null,
-      loggedAt: apiResult.logged_at,
-    };
-  }
   const logs = getStore<SupplementLog[]>("supplement_logs", []);
   const entry: SupplementLog = {
     id: generateId(),
@@ -384,6 +338,17 @@ export async function logSupplement(data: {
       });
     }
   }
+
+  // Background sync to API
+  apiFetch("supplements", {
+    method: "POST",
+    body: JSON.stringify({
+      supplement_name: data.supplementName,
+      brand: data.brand,
+      dosage: data.dosage,
+      notes: data.notes,
+    }),
+  }).catch(() => {});
 
   return entry;
 }
