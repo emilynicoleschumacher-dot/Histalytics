@@ -5,3 +5,15 @@ dist
 *.db
 .DS_Store
 *.local
+
+# Vercel deploy scripts (contain secrets)
+deploy.sh
+do-deploy.sh
+set-env.sh
+set-vercel-env.py
+build-vercel.sh
+run-build.sh
+pwa-pr.sh
+
+# Run artifacts
+.run/

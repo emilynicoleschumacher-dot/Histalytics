@@ -103,7 +103,6 @@ const navConfig: NavItem[] = [
   { path: "/insights", label: "Insights", icon: insightsIcon },
   { path: "/recommendations", label: "References", icon: icons.lightbulb },
   { path: "/history", label: "History", icon: icons.calendar },
-  { path: "/community", label: "Community", icon: icons.community },
 ];
 
 function isDropdown(item: NavItem): item is NavDropdown {

@@ -499,6 +499,15 @@ function Dashboard() {
         </Card>
       </div>
     </div>
+
+    {/* ── Privacy Notice ── */}
+    <div className="border-t border-border-light pt-6 pb-8 mt-4">
+      <p className="text-xs text-text-muted text-center max-w-md mx-auto leading-relaxed">
+        <strong>Your data is yours.</strong> We do <strong>not</strong> share, sell, or rent your data.
+        Not used for advertising or AI training.{" "}
+        <a href="/profile" className="text-brand-500 hover:text-brand-600 underline">Privacy details</a>
+      </p>
+    </div>
   );
 }
 

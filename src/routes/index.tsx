@@ -84,7 +84,7 @@ function Home() {
               <p className="mt-5 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg">
                 The smart symptom tracker built for MCAS and histamine
                 intolerance. Log symptoms, find patterns, and discover what
-                actually helps — no more spreadsheets and Facebook groups.
+                actually helps — no more spreadsheets.
               </p>
               <div className="mt-6 flex items-center gap-2.5 text-sm text-text-secondary">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-50 text-brand-500">
