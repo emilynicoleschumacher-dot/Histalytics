@@ -837,10 +837,6 @@ export function getSymptomTrends(range: TimeRange): TrendDayPoint[] {
     if (ds > maxDate) maxDate = ds;
   }
 
-  // Clamp maxDate to today (don't show future dates as empty)
-  const today = new Date().toISOString().slice(0, 10);
-  if (maxDate > today) maxDate = today;
-
   // Create entries for each day from minDate to maxDate
   const byDay: Record<string, TrendDayPoint> = {};
   const start = new Date(minDate + "T12:00:00");
