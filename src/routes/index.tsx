@@ -62,20 +62,6 @@ const howItWorks = [
   },
 ];
 
-const testimonials = [
-  {
-    quote:
-      "After years of guessing, I finally have a clear picture of my triggers. This is the tool I wish I'd had from day one.",
-    author: "Sarah K.",
-    role: "Living with MCAS since 2020",
-  },
-  {
-    quote:
-      "The product recommendations actually made sense for my specific symptoms. No more wasting money on supplements that don't work for me.",
-    author: "Michael R.",
-    role: "Histamine intolerance",
-  },
-];
 
 function Home() {
   const [email, setEmail] = useState("");
@@ -240,41 +226,6 @@ function Home() {
                 <p className="text-text-secondary text-sm leading-relaxed">
                   {feature.description}
                 </p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Testimonials ── */}
-      <section className="py-20 sm:py-28 bg-surface-alt/50">
-        <div className="container-narrow">
-          <div className="text-center max-w-xl mx-auto mb-16">
-            <Badge variant="teal" className="mb-4">
-              From the community
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
-              Built for people like you
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {testimonials.map((t) => (
-              <Card key={t.author} elevated className="p-6 sm:p-8">
-                <svg
-                  className="w-8 h-8 text-brand-200 mb-4"
-                  fill="currentColor"
-                  viewBox="0 0 32 32"
-                >
-                  <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-1.1.9-2 2-2V8zm14 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-1.1.9-2 2-2V8z" />
-                </svg>
-                <p className="text-text-secondary leading-relaxed mb-6">
-                  {t.quote}
-                </p>
-                <div>
-                  <p className="font-semibold text-text-primary">{t.author}</p>
-                  <p className="text-sm text-text-muted">{t.role}</p>
-                </div>
               </Card>
             ))}
           </div>
