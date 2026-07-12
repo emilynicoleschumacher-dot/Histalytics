@@ -37,6 +37,74 @@ async function apiFetch(path: string, options?: RequestInit): Promise<Response |
 
 /* ─── Types ─── */
 
+/** Load all data from the API and merge into localStorage. Call on sign-in. */
+export async function syncFromAPI(): Promise<void> {
+  const clerkId = getClerkId();
+  if (!clerkId) return;
+
+  const fetches: { key: string; endpoint: string; mapper: (r: any) => any }[] = [
+    {
+      key: "symptom_logs",
+      endpoint: "symptoms",
+      mapper: (r: any) => ({
+        id: r.id,
+        symptomId: r.symptom_id,
+        symptomName: r.symptom_name,
+        bodySystem: r.body_system,
+        severity: r.severity,
+        durationMinutes: r.duration_minutes ?? null,
+        activityLevel: null,
+        notes: r.notes ?? null,
+        loggedAt: r.logged_at,
+      }),
+    },
+    {
+      key: "meal_logs",
+      endpoint: "meals",
+      mapper: (r: any) => ({
+        id: r.id,
+        foodName: r.food_name,
+        mealType: r.meal_type ?? null,
+        portionSize: r.portion_size ?? null,
+        ingredients: r.ingredients ? JSON.parse(r.ingredients) : null,
+        notes: r.notes ?? null,
+        loggedAt: r.logged_at,
+      }),
+    },
+    {
+      key: "supplement_logs",
+      endpoint: "supplements",
+      mapper: (r: any) => ({
+        id: r.id,
+        supplementName: r.supplement_name,
+        brand: r.brand ?? null,
+        dosage: r.dosage ?? null,
+        notes: r.notes ?? null,
+        loggedAt: r.logged_at,
+      }),
+    },
+  ];
+
+  for (const f of fetches) {
+    try {
+      const res = await apiFetch(f.endpoint);
+      if (!res) continue;
+      const rows = await res.json();
+      if (!Array.isArray(rows)) continue;
+      const items = rows.map(f.mapper).filter(Boolean);
+      if (items.length > 0) {
+        // Merge: API data is authoritative, keep existing local entries too (deduplicate by id)
+        const existing = getStore<any[]>(f.key, []);
+        const existingIds = new Set(existing.map((e: any) => e.id));
+        const newItems = items.filter((i: any) => !existingIds.has(i.id));
+        setStore(f.key, [...newItems, ...existing]);
+      }
+    } catch {
+      // Silently skip — localStorage data is still available
+    }
+  }
+}
+
 export type ActivityLevel = "low" | "medium" | "high" | null;
 
 export interface SymptomLog {

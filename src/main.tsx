@@ -4,19 +4,22 @@ import ReactDOM from "react-dom/client";
 import { ClerkProvider, useUser } from "@clerk/clerk-react";
 
 import { getRouter } from "./router";
-import { setClerkId } from "~/lib/data-store";
+import { setClerkId, syncFromAPI } from "~/lib/data-store";
 import "./styles/app.css";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const hasClerk = Boolean(PUBLISHABLE_KEY);
 const router = getRouter();
 
-/* ─── Sync Clerk user ID to data-store ─── */
+/* ─── Sync Clerk user ID to data-store & load server data ─── */
 function ClerkSync() {
   const { user, isLoaded } = useUser();
   useEffect(() => {
     if (isLoaded) {
       setClerkId(user?.id || null);
+      if (user?.id) {
+        syncFromAPI();
+      }
     }
   }, [user?.id, isLoaded]);
   return null;
