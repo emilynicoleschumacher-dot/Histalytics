@@ -826,19 +826,28 @@ export interface TrendDayPoint {
 
 export function getSymptomTrends(range: TimeRange): TrendDayPoint[] {
   const symptoms = filterByRange(getAllSymptoms(), range);
+  if (symptoms.length === 0) return [];
 
-  // Group symptoms by day
+  // Find the actual date range from the symptom data
+  let minDate = symptoms[0].loggedAt.slice(0, 10);
+  let maxDate = symptoms[0].loggedAt.slice(0, 10);
+  for (const s of symptoms) {
+    const ds = toDateStr(s.loggedAt);
+    if (ds < minDate) minDate = ds;
+    if (ds > maxDate) maxDate = ds;
+  }
+
+  // Clamp maxDate to today (don't show future dates as empty)
+  const today = new Date().toISOString().slice(0, 10);
+  if (maxDate > today) maxDate = today;
+
+  // Create entries for each day from minDate to maxDate
   const byDay: Record<string, TrendDayPoint> = {};
-  const days = timeRangeDays(range);
-
-  // Create entries for each day in the range
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
+  const start = new Date(minDate + "T12:00:00");
+  const end = new Date(maxDate + "T12:00:00");
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().slice(0, 10);
-    const label = days <= 14
-      ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-      : d.toLocaleDateString("en-US", { weekday: "short" });
+    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     byDay[dateStr] = { date: dateStr, label, values: [] };
   }
 
@@ -853,14 +862,7 @@ export function getSymptomTrends(range: TimeRange): TrendDayPoint[] {
     }
   }
 
-  // Trim leading empty days so chart starts at first day with data
-  const allDays = Object.values(byDay);
-  const firstDataIdx = allDays.findIndex(d => d.values.length > 0);
-  if (firstDataIdx > 0) {
-    return allDays.slice(firstDataIdx);
-  }
-
-  return allDays;
+  return Object.values(byDay);
 }
 
 /* ── Section 3: Flare Day Analysis ── */
@@ -884,7 +886,6 @@ export function getFlareDayAnalysis(range: TimeRange): {
   dayOfWeekData: DayOfWeekItem[];
 } {
   const symptoms = filterByRange(getAllSymptoms(), range);
-  const days = timeRangeDays(range);
 
   // Group symptoms by day
   const byDay: Record<string, SymptomLog[]> = {};
@@ -894,14 +895,19 @@ export function getFlareDayAnalysis(range: TimeRange): {
     byDay[ds].push(s);
   }
 
-  // Create data for each day in range
+  // Find the actual date range from the data
+  const dates = Object.keys(byDay).sort();
+  if (dates.length === 0) {
+    return { flareData: [], flareCount: 0, totalDays: 0, dayOfWeekData: [] };
+  }
+
+  // Create entries for each day from first to last data date
   const flareData: FlareDayItem[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
+  const start = new Date(dates[0] + "T12:00:00");
+  const end = new Date(dates[dates.length - 1] + "T12:00:00");
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().slice(0, 10);
     const dayLabel = d.toLocaleDateString("en-US", { weekday: "short" });
-
     const daySymptoms = byDay[dateStr] || [];
     const avgSeverity = daySymptoms.length
       ? Math.round((daySymptoms.reduce((sum, s) => sum + s.severity, 0) / daySymptoms.length) * 10) / 10
@@ -912,12 +918,6 @@ export function getFlareDayAnalysis(range: TimeRange): {
       value: avgSeverity,
       isFlare: avgSeverity >= 6,
     });
-  }
-
-  // Trim leading empty days so chart starts at first day with data
-  const firstFlareIdx = flareData.findIndex(d => d.value > 0);
-  if (firstFlareIdx > 0) {
-    flareData.splice(0, firstFlareIdx);
   }
 
   const flareCount = flareData.filter((d) => d.isFlare).length;
@@ -949,7 +949,7 @@ export function getFlareDayAnalysis(range: TimeRange): {
     logCount: data.severities.length,
   }));
 
-  return { flareData, flareCount, totalDays: days, dayOfWeekData };
+  return { flareData, flareCount, totalDays: flareData.length, dayOfWeekData };
 }
 
 /* ── Section 4: Ingredient Correlations ── */
