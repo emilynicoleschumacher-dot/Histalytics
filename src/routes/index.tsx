@@ -1,11 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 
 import { Button } from "~/components/Button";
 import { Card, CardBody } from "~/components/Card";
 import { Badge } from "~/components/Badge";
-
-const EARLY_ACCESS_API = "/api/early-access";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -64,37 +61,6 @@ const howItWorks = [
 
 
 function Home() {
-  const [email, setEmail] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const scrollToForm = () => {
-    document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" });
-    setShowForm(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !email.includes("@")) return;
-    setSubmitting(true);
-    setStatus(null);
-    try {
-      const res = await fetch(EARLY_ACCESS_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const result = await res.json();
-      setSubmitting(false);
-      setStatus({ type: result.success ? "success" : "error", message: result.message });
-      if (result.success) setEmail("");
-    } catch {
-      setSubmitting(false);
-      setStatus({ type: "error", message: "Something went wrong. Please try again." });
-    }
-  };
-
   return (
     <div>
       {/* ── Hero ── */}
@@ -129,10 +95,12 @@ function Home() {
                 <span className="text-text-muted">Built by the MCAS community, for the MCAS community</span>
               </div>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Button size="lg" className="shadow-elevated" onClick={scrollToForm}>
-                  Get early access
-                </Button>
-                <Button variant="outline" size="lg" onClick={scrollToForm}>
+                <Link to="/dashboard">
+                  <Button size="lg" className="shadow-elevated">
+                    Get started — free
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>
                   See how it works
                 </Button>
               </div>
@@ -202,7 +170,7 @@ function Home() {
       </section>
 
       {/* ── Features ── */}
-      <section className="py-20 sm:py-28">
+      <section className="py-20 sm:py-28" id="features">
         <div className="container-narrow">
           <div className="text-center max-w-xl mx-auto mb-16">
             <Badge className="mb-4">Features</Badge>
@@ -282,53 +250,6 @@ function Home() {
         </div>
       </section>
 
-      {/* ── CTA / Signup ── */}
-      <section className="py-20 sm:py-28" id="signup-form">
-        <div className="container-narrow">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-8 sm:p-12 lg:p-16 text-center">
-            <div className="absolute inset-0 bg-[url('/images/hero-illustration.png')] bg-cover bg-center opacity-5" />
-            <div className="relative">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight max-w-xl mx-auto text-balance">
-                Ready to understand your body better?
-              </h2>
-              <p className="mt-4 text-brand-200 text-lg max-w-md mx-auto">
-                Join the waitlist and be the first to know when we launch.
-              </p>
-
-              {status ? (
-                <div className={`mt-8 p-4 rounded-xl text-sm font-medium max-w-md mx-auto ${
-                  status.type === "success"
-                    ? "bg-green-500/20 text-green-200 border border-green-400/30"
-                    : "bg-yellow-500/20 text-yellow-200 border border-yellow-400/30"
-                }`}>
-                  {status.message}
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="mt-8 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    className="flex-1 px-4 py-3 rounded-xl text-sm bg-white/10 border border-white/20 text-white placeholder:text-brand-200/70 focus:outline-none focus:ring-2 focus:ring-white/30"
-                  />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    size="lg"
-                    className="bg-white text-brand-700 hover:bg-brand-50"
-                    isLoading={submitting}
-                  >
-                    Join waitlist
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Footer ── */}
       <footer className="border-t border-border-light py-8">
         <div className="container-narrow flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -347,6 +268,11 @@ function Home() {
           <p className="text-sm text-text-muted">
             &copy; {new Date().getFullYear()} Histalytics.{" "}
             <span className="text-text-secondary">Built for the MCAS community.</span>
+          </p>
+          <p className="text-xs text-text-muted mt-3 max-w-md mx-auto leading-relaxed">
+            <strong>Your data is yours.</strong> We do <strong>not</strong> share, sell, or rent your data.
+            Not used for advertising or AI training.{" "}
+            <a href="/profile" className="text-brand-500 hover:text-brand-600 underline">Privacy details</a>
           </p>
         </div>
       </footer>
