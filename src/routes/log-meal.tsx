@@ -75,16 +75,20 @@ function LogMeal() {
         type: "meal",
         foodName: label,
         mealType: mealType || undefined,
+        ingredients: ingredients.length > 0 ? ingredients.join(", ") : undefined,
+        portionSize: portionSize || undefined,
         notes: notes || undefined,
       });
     }
     setFavoriteVersion((v) => v + 1);
   };
 
-  const handleFavoriteSelect = (fav: { foodName?: string; mealType?: string; notes?: string }) => {
+  const handleFavoriteSelect = (fav: { foodName?: string; mealType?: string; ingredients?: string; portionSize?: string; notes?: string }) => {
     if (fav.foodName) {
       setFoodName(fav.foodName);
       if (fav.mealType) setMealType(fav.mealType);
+      if (fav.ingredients) setIngredients(fav.ingredients.split(",").map((i) => i.trim()).filter(Boolean));
+      if (fav.portionSize) setPortionSize(fav.portionSize);
       if (fav.notes) setNotes(fav.notes);
       setFavoriteVersion((v) => v + 1);
     }

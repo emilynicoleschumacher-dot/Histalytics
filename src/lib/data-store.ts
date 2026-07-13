@@ -1338,6 +1338,7 @@ export interface FavoriteEntry {
   /** For meals: food name */
   foodName?: string;
   mealType?: string;
+  portionSize?: string;
   /** For supplements */
   supplementName?: string;
   brand?: string;
