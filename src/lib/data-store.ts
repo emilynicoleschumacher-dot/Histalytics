@@ -1046,10 +1046,13 @@ export interface IngredientCorrelation {
 
 export function getIngredientCorrelations(range: TimeRange): IngredientCorrelation[] {
   const symptoms = filterByRange(getAllSymptoms(), range);
-  const ingredients = filterByRange(
-    getStore<IngredientLog[]>("ingredient_logs", []),
-    range,
-  );
+  const meals = filterByRange(getAllMeals(), range);
+  const supplements = filterByRange(getAllSupplements(), range);
+  const products = getStore<ProductLog[]>("product_logs", []).filter((p) => {
+    if (!p.loggedAt) return false;
+    const cutoff = daysAgo(timeRangeDays(range));
+    return p.loggedAt.slice(0, 10) >= cutoff;
+  });
 
   // Get flare days (days where avg symptom severity >= 6)
   const byDay: Record<string, SymptomLog[]> = {};
@@ -1069,13 +1072,46 @@ export function getIngredientCorrelations(range: TimeRange): IngredientCorrelati
     }
   }
 
-  // Group ingredient logs by ingredient name
+  // Extract ingredients from meal, supplement, and product logs (using their correct dates)
   const ingByName: Record<string, { dates: string[]; category: string }> = {};
-  for (const ing of ingredients) {
-    if (!ingByName[ing.name]) {
-      ingByName[ing.name] = { dates: [], category: ing.category };
+
+  for (const meal of meals) {
+    if (meal.ingredients && meal.ingredients.length > 0) {
+      const date = toDateStr(meal.loggedAt);
+      for (const ing of meal.ingredients) {
+        if (!ing.trim()) continue;
+        if (!ingByName[ing.trim()]) {
+          ingByName[ing.trim()] = { dates: [], category: "food" };
+        }
+        ingByName[ing.trim()].dates.push(date);
+      }
     }
-    ingByName[ing.name].dates.push(toDateStr(ing.loggedAt));
+  }
+
+  for (const sup of supplements) {
+    if (sup.ingredients && sup.ingredients.trim()) {
+      const date = toDateStr(sup.loggedAt);
+      const list = sup.ingredients.split(",").map((i) => i.trim()).filter(Boolean);
+      for (const ing of list) {
+        if (!ingByName[ing]) {
+          ingByName[ing] = { dates: [], category: "supplement-additive" };
+        }
+        ingByName[ing].dates.push(date);
+      }
+    }
+  }
+
+  for (const prod of products) {
+    if (prod.ingredients && prod.ingredients.trim()) {
+      const date = toDateStr(prod.loggedAt);
+      const list = prod.ingredients.split(",").map((i) => i.trim()).filter(Boolean);
+      for (const ing of list) {
+        if (!ingByName[ing]) {
+          ingByName[ing] = { dates: [], category: "personal-care" };
+        }
+        ingByName[ing].dates.push(date);
+      }
+    }
   }
 
   const correlations: IngredientCorrelation[] = Object.entries(ingByName)
