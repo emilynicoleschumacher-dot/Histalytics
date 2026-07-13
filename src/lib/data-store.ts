@@ -374,6 +374,7 @@ export async function logMeal(data: {
           category: "food",
           sourceType: "meal",
           notes: `From: ${data.foodName}`,
+          loggedAt: data.loggedAt,
         });
       }
     }
@@ -468,6 +469,7 @@ export async function logSupplement(data: {
         category: "supplement-additive",
         sourceType: "supplement",
         notes: `From supplement: ${data.supplementName}`,
+        loggedAt: data.loggedAt,
       });
     }
   }
@@ -717,6 +719,7 @@ export function logIngredient(data: {
   sourceType?: string;
   histamineLevel?: string;
   notes?: string | null;
+  loggedAt?: string | null;
 }): IngredientLog {
   const logs = getStore<IngredientLog[]>("ingredient_logs", []);
   const entry: IngredientLog = {
@@ -726,7 +729,7 @@ export function logIngredient(data: {
     sourceType: data.sourceType ?? "manual",
     histamineLevel: data.histamineLevel ?? "unknown",
     notes: data.notes ?? null,
-    loggedAt: new Date().toISOString(),
+    loggedAt: data.loggedAt || new Date().toISOString(),
   };
   logs.unshift(entry);
   setStore("ingredient_logs", logs);
@@ -763,6 +766,7 @@ export function logPersonalCareProduct(data: {
         category: "personal-care",
         sourceType: "product",
         notes: `From: ${data.productName}`,
+        loggedAt: data.loggedAt,
       });
     }
   }
