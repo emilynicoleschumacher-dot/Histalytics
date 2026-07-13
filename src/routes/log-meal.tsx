@@ -14,6 +14,7 @@ import {
   isFavorite,
   getMealById,
   updateMeal,
+  utcToLocalDatetime,
   type ActivityLevel,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
@@ -56,7 +57,7 @@ function LogMeal() {
         if (entry.ingredients) setIngredients(entry.ingredients);
         if (entry.activityLevel) setActivityLevel(entry.activityLevel);
         if (entry.notes) setNotes(entry.notes);
-        setLoggedAt(entry.loggedAt.slice(0, 16));
+        setLoggedAt(utcToLocalDatetime(entry.loggedAt));
       }
     }
   }, [editId]);

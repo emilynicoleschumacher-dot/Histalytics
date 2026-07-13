@@ -12,6 +12,7 @@ import {
   isFavorite,
   getProductById,
   updateProduct,
+  utcToLocalDatetime,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
@@ -51,7 +52,7 @@ function LogProduct() {
         if (entry.productType) setProductType(entry.productType);
         if (entry.ingredients) setIngredients(entry.ingredients);
         if (entry.notes) setNotes(entry.notes);
-        setLoggedAt(entry.loggedAt.slice(0, 16));
+        setLoggedAt(utcToLocalDatetime(entry.loggedAt));
       }
     }
   }, [editId]);

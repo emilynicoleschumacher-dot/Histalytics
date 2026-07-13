@@ -12,6 +12,7 @@ import {
   isFavorite,
   getSupplementById,
   updateSupplement,
+  utcToLocalDatetime,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
@@ -66,7 +67,7 @@ function LogSupplement() {
         if (entry.dosage) setDosage(entry.dosage);
         if (entry.ingredients) setIngredients(entry.ingredients);
         if (entry.notes) setNotes(entry.notes);
-        setLoggedAt(entry.loggedAt.slice(0, 16));
+        setLoggedAt(utcToLocalDatetime(entry.loggedAt));
       }
     }
   }, [editId]);

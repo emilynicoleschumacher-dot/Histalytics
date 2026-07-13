@@ -161,6 +161,17 @@ export interface SupplementLog {
 
 /* ─── Helpers ─── */
 
+/** Convert a UTC ISO string to a local datetime-local value (YYYY-MM-DDTHH:MM) */
+export function utcToLocalDatetime(isoStr: string): string {
+  const d = new Date(isoStr);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
 function getStore<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -1051,6 +1062,7 @@ export interface TimelineEntry {
   subtitle: string;
   severity?: number;
   time: string;
+  timestamp: number;
   ingredients?: string[];
   notes?: string;
 }
@@ -1066,7 +1078,6 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
   for (const s of symptoms) {
     const d = new Date(s.loggedAt);
     const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    // Is this today?
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     entries.push({
       id: `symptom-${s.id}`,
@@ -1075,6 +1086,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
       subtitle: dateStr === todayStr ? "Today" : dateStr,
       severity: s.severity,
       time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      timestamp: d.getTime(),
       notes: s.notes ?? undefined,
     });
   }
@@ -1089,6 +1101,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
       title: `${m.mealType ? m.mealType.charAt(0).toUpperCase() + m.mealType.slice(1) + " — " : ""}${m.foodName}`,
       subtitle: dateStr === todayStr ? "Today" : dateStr,
       time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      timestamp: d.getTime(),
       ingredients: m.ingredients ?? undefined,
     });
   }
@@ -1103,6 +1116,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
       title: p.productName + (p.brand ? ` (${p.brand})` : ""),
       subtitle: dateStr === todayStr ? "Today" : dateStr,
       time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      timestamp: d.getTime(),
       ingredients: p.ingredients ? p.ingredients.split(",").map((i) => i.trim()).filter(Boolean) : undefined,
       notes: p.notes ?? undefined,
     });
@@ -1118,18 +1132,14 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
       title: s.supplementName + (s.dosage ? ` — ${s.dosage}` : ""),
       subtitle: dateStr === todayStr ? "Today" : dateStr,
       time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      timestamp: d.getTime(),
       ingredients: s.ingredients ? s.ingredients.split(",").map((i) => i.trim()).filter(Boolean) : undefined,
       notes: s.notes ?? undefined,
     });
   }
 
-  // Sort by loggedAt descending, then take limit
-  entries.sort((a, b) => {
-    // Compare by subtitle (date) first, then by time
-    const dateA = a.subtitle === "Today" ? new Date().getTime() : new Date(a.subtitle + " 2026").getTime();
-    const dateB = b.subtitle === "Today" ? new Date().getTime() : new Date(b.subtitle + " 2026").getTime();
-    return dateB - dateA || b.time.localeCompare(a.time);
-  });
+  // Sort by timestamp descending (most recent first)
+  entries.sort((a, b) => b.timestamp - a.timestamp);
 
   return entries.slice(0, limit);
 }

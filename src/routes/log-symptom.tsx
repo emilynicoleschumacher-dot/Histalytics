@@ -12,6 +12,7 @@ import {
   isFavorite,
   getSymptomById,
   updateSymptom,
+  utcToLocalDatetime,
   type ActivityLevel,
 } from "~/lib/data-store";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
@@ -59,9 +60,9 @@ function LogSymptom() {
         if (entry.durationMinutes) setDuration(`${entry.durationMinutes} min`);
         if (entry.activityLevel) setActivityLevel(entry.activityLevel);
         if (entry.notes) setNotes(entry.notes);
-        if (entry.reliefAt) setReliefAt(entry.reliefAt.slice(0, 16));
+        if (entry.reliefAt) setReliefAt(utcToLocalDatetime(entry.reliefAt));
         if (entry.reliefNote) setReliefNote(entry.reliefNote);
-        setLoggedAt(entry.loggedAt.slice(0, 16));
+        setLoggedAt(utcToLocalDatetime(entry.loggedAt));
       }
     }
   }, [editId]);
