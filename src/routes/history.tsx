@@ -49,7 +49,9 @@ function History() {
   const historyData = getFullHistory();
   const allSymptoms = historyData.symptoms;
   const allMeals = historyData.meals;
-  const hasData = allSymptoms.length > 0 || allMeals.length > 0;
+  const allSupplements = historyData.supplements;
+  const allProducts = historyData.products;
+  const hasData = allSymptoms.length > 0 || allMeals.length > 0 || allSupplements.length > 0 || allProducts.length > 0;
 
   const handleDelete = (id: string, type: string) => {
     let ok = false;
@@ -103,6 +105,26 @@ function History() {
       ts: new Date(m.loggedAt).getTime(),
       editPath: `/log-meal?edit=${m.id}`,
     })),
+    ...allSupplements.map((s) => ({
+      id: s.id,
+      date: new Date(s.loggedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      type: "supplement" as const,
+      title: s.name,
+      notes: s.brand ? `${s.brand}${s.dosage ? ` — ${s.dosage}` : ""}` : s.dosage || undefined,
+      time: new Date(s.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      ts: new Date(s.loggedAt).getTime(),
+      editPath: `/log-supplement?edit=${s.id}`,
+    })),
+    ...allProducts.map((p) => ({
+      id: p.id,
+      date: new Date(p.loggedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      type: "product" as const,
+      title: p.name,
+      notes: p.brand ? `${p.brand}${p.productType ? ` — ${p.productType}` : ""}` : p.productType || undefined,
+      time: new Date(p.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      ts: new Date(p.loggedAt).getTime(),
+      editPath: `/log-product?edit=${p.id}`,
+    })),
   ].sort((a, b) => b.ts - a.ts);
 
   // Group by date
@@ -118,7 +140,7 @@ function History() {
       <div className="container-narrow py-8">
         <PageHeader
           title="History"
-          description="Browse your symptom and meal history."
+          description="Browse your symptom, meal, supplement, and product history."
         />
         <Card elevated className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center">
@@ -130,7 +152,7 @@ function History() {
             No history yet
           </h2>
           <p className="text-sm text-text-muted mb-6 max-w-xs mx-auto">
-            Start logging your symptoms and meals to see your history here.
+            Start logging your symptoms, meals, supplements, and products to see your history here.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link to="/log-symptom">
@@ -149,7 +171,7 @@ function History() {
     <div className="container-narrow py-8">
       <PageHeader
         title="History"
-        description="Browse your symptom and meal history."
+        description="Browse your symptom, meal, supplement, and product history."
       >
         <div className="flex items-center gap-2 bg-surface-card border border-border-light rounded-lg p-0.5">
           <button
@@ -283,16 +305,28 @@ function History() {
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                       entry.type === "symptom"
                         ? "bg-coral-50 text-coral-500"
-                        : "bg-teal-50 text-teal-500"
+                        : entry.type === "meal"
+                          ? "bg-teal-50 text-teal-500"
+                          : entry.type === "supplement"
+                            ? "bg-purple-50 text-purple-500"
+                            : "bg-amber-50 text-amber-500"
                     }`}
                   >
                     {entry.type === "symptom" ? (
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                       </svg>
-                    ) : (
+                    ) : entry.type === "meal" ? (
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                      </svg>
+                    ) : entry.type === "supplement" ? (
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
                       </svg>
                     )}
                   </div>
@@ -326,6 +360,12 @@ function History() {
                   )}
                   {entry.type === "meal" && (
                     <Badge variant="teal">Meal</Badge>
+                  )}
+                  {entry.type === "supplement" && (
+                    <Badge variant="primary">Supplement</Badge>
+                  )}
+                  {entry.type === "product" && (
+                    <Badge variant="warning">Product</Badge>
                   )}
 
                   {/* Edit & Delete buttons */}

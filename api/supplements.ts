@@ -41,6 +41,19 @@ export default async function handler(req: Request) {
     });
   }
 
+  if (req.method === "DELETE") {
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return new Response(JSON.stringify({ error: "id required" }), {
+        status: 400, headers: { "content-type": "application/json" },
+      });
+    }
+    await db`DELETE FROM supplement_logs WHERE id = ${id} AND user_id = ${userId}`;
+    return new Response(JSON.stringify({ deleted: true }), {
+      status: 200, headers: { "content-type": "application/json" },
+    });
+  }
+
   return new Response(JSON.stringify({ error: "Method not allowed" }), {
     status: 405, headers: { "content-type": "application/json" },
   });
