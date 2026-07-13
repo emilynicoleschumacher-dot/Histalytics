@@ -29,7 +29,13 @@ export const Route = createFileRoute("/log-symptom")({
 const symptomSystems = getSymptomSystems();
 
 function nowISO() {
-  return new Date().toISOString().slice(0, 16);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day}T${h}:${min}`;
 }
 
 function LogSymptom() {
@@ -118,8 +124,8 @@ function LogSymptom() {
       durationMinutes: duration ? parseInt(duration.match(/\d+/)?.[0] || "0", 10) || null : null,
       activityLevel,
       notes: notes || null,
-      loggedAt: loggedAt ? localDatetimeToISO(loggedAt) : null,
-      reliefAt: reliefAt ? localDatetimeToISO(reliefAt) : null,
+      loggedAt: loggedAt || null,
+      reliefAt: reliefAt || null,
       reliefNote: reliefNote.trim() || null,
     };
 
