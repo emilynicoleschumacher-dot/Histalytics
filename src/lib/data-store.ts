@@ -286,6 +286,9 @@ export async function logSymptom(data: {
       severity: data.severity,
       duration_minutes: data.durationMinutes,
       notes: data.notes,
+      logged_at: data.loggedAt,
+      relief_at: data.reliefAt,
+      relief_note: data.reliefNote,
     }),
   }).catch(() => {});
   return entry;
@@ -309,6 +312,21 @@ export function updateSymptom(id: string, data: Partial<Omit<SymptomLog, "id">>)
   if (idx === -1) return false;
   logs[idx] = { ...logs[idx], ...data };
   setStore("symptom_logs", logs);
+  // Background sync PUT to API
+  apiFetch(`symptoms?id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      symptom_id: data.symptomId,
+      symptom_name: data.symptomName,
+      body_system: data.bodySystem,
+      severity: data.severity,
+      duration_minutes: data.durationMinutes,
+      notes: data.notes,
+      logged_at: data.loggedAt,
+      relief_at: data.reliefAt,
+      relief_note: data.reliefNote,
+    }),
+  }).catch(() => {});
   return true;
 }
 
@@ -369,6 +387,7 @@ export async function logMeal(data: {
       meal_type: data.mealType,
       portion_size: data.portionSize,
       notes: data.notes,
+      logged_at: data.loggedAt,
     }),
   }).catch(() => {});
 
@@ -393,6 +412,17 @@ export function updateMeal(id: string, data: Partial<Omit<MealLog, "id">>): bool
   if (idx === -1) return false;
   logs[idx] = { ...logs[idx], ...data };
   setStore("meal_logs", logs);
+  // Background sync PUT to API
+  apiFetch(`meals?id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      food_name: data.foodName,
+      meal_type: data.mealType,
+      portion_size: data.portionSize,
+      notes: data.notes,
+      logged_at: data.loggedAt,
+    }),
+  }).catch(() => {});
   return true;
 }
 
@@ -450,6 +480,7 @@ export async function logSupplement(data: {
       brand: data.brand,
       dosage: data.dosage,
       notes: data.notes,
+      logged_at: data.loggedAt,
     }),
   }).catch(() => {});
 
@@ -474,6 +505,17 @@ export function updateSupplement(id: string, data: Partial<Omit<SupplementLog, "
   if (idx === -1) return false;
   logs[idx] = { ...logs[idx], ...data };
   setStore("supplement_logs", logs);
+  // Background sync PUT to API
+  apiFetch(`supplements?id=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      supplement_name: data.supplementName,
+      brand: data.brand,
+      dosage: data.dosage,
+      notes: data.notes,
+      logged_at: data.loggedAt,
+    }),
+  }).catch(() => {});
   return true;
 }
 

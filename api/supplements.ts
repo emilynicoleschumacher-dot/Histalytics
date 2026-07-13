@@ -41,6 +41,28 @@ export default async function handler(req: Request) {
     });
   }
 
+  if (req.method === "PUT") {
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return new Response(JSON.stringify({ error: "id required" }), {
+        status: 400, headers: { "content-type": "application/json" },
+      });
+    }
+    const { supplement_name, brand, dosage, notes, logged_at } = await req.json();
+    await db`
+      UPDATE supplement_logs SET
+        supplement_name = ${supplement_name || null},
+        brand = ${brand || null},
+        dosage = ${dosage || null},
+        notes = ${notes || null},
+        logged_at = ${logged_at || null}
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
+    return new Response(JSON.stringify({ updated: true }), {
+      status: 200, headers: { "content-type": "application/json" },
+    });
+  }
+
   if (req.method === "DELETE") {
     const id = url.searchParams.get("id");
     if (!id) {

@@ -31,6 +31,32 @@ export default async function handler(req: Request) {
     });
   }
 
+  if (req.method === "PUT") {
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return new Response(JSON.stringify({ error: "id required" }), {
+        status: 400, headers: { "content-type": "application/json" },
+      });
+    }
+    const { symptom_id, symptom_name, body_system, severity, duration_minutes, notes, logged_at, relief_at, relief_note } = await req.json();
+    await db`
+      UPDATE symptom_logs SET
+        symptom_id = ${symptom_id || null},
+        symptom_name = ${symptom_name || null},
+        body_system = ${body_system || null},
+        severity = ${severity},
+        duration_minutes = ${duration_minutes || null},
+        notes = ${notes || null},
+        logged_at = ${logged_at || null},
+        relief_at = ${relief_at || null},
+        relief_note = ${relief_note || null}
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
+    return new Response(JSON.stringify({ updated: true }), {
+      status: 200, headers: { "content-type": "application/json" },
+    });
+  }
+
   if (req.method === "GET") {
     const limit = parseInt(url.searchParams.get("limit") || "50");
     const symptoms = await db`
