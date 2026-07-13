@@ -132,6 +132,8 @@ export interface SymptomLog {
   activityLevel: ActivityLevel;
   notes: string | null;
   loggedAt: string;
+  reliefAt: string | null;
+  reliefNote: string | null;
 }
 
 export interface MealLog {
@@ -245,6 +247,8 @@ export async function logSymptom(data: {
   activityLevel?: ActivityLevel;
   notes?: string | null;
   loggedAt?: string | null;
+  reliefAt?: string | null;
+  reliefNote?: string | null;
 }): Promise<SymptomLog> {
   const logs = getStore<SymptomLog[]>("symptom_logs", []);
   const entry: SymptomLog = {
@@ -257,6 +261,8 @@ export async function logSymptom(data: {
     activityLevel: data.activityLevel ?? null,
     notes: data.notes ?? null,
     loggedAt: data.loggedAt || new Date().toISOString(),
+    reliefAt: data.reliefAt ?? null,
+    reliefNote: data.reliefNote ?? null,
   };
   logs.unshift(entry);
   setStore("symptom_logs", logs);
@@ -1390,4 +1396,47 @@ export function removeFavorite(id: string): void {
 
 export function isFavorite(type: string, label: string): boolean {
   return getFavorites().some((f) => f.type === type && f.label === label);
+}
+
+/* ─── Relief / "What Helped?" Insights ─── */
+
+export interface ReliefInsight {
+  intervention: string;
+  count: number;
+  avgMinutesToRelief: number | null;
+}
+
+export function getReliefInsights(): ReliefInsight[] {
+  const symptoms = getStore<SymptomLog[]>("symptom_logs", []).filter((s) => s.reliefNote && s.reliefNote.trim());
+  if (symptoms.length === 0) return [];
+
+  const grouped: Record<string, { count: number; totalMinutes: number; measurableCount: number }> = {};
+  for (const s of symptoms) {
+    const note = s.reliefNote!.trim().toLowerCase();
+    if (!grouped[note]) grouped[note] = { count: 0, totalMinutes: 0, measurableCount: 0 };
+    grouped[note].count++;
+
+    // Calculate minutes to relief if both timestamps are available
+    if (s.reliefAt && s.loggedAt) {
+      const logged = new Date(s.loggedAt).getTime();
+      const relief = new Date(s.reliefAt).getTime();
+      if (relief > logged && isFinite(relief) && isFinite(logged)) {
+        const diffMinutes = Math.round((relief - logged) / 60000);
+        if (diffMinutes >= 0 && diffMinutes < 10080) { // cap at 1 week
+          grouped[note].totalMinutes += diffMinutes;
+          grouped[note].measurableCount++;
+        }
+      }
+    }
+  }
+
+  return Object.entries(grouped)
+    .map(([intervention, data]) => ({
+      intervention: intervention.charAt(0).toUpperCase() + intervention.slice(1),
+      count: data.count,
+      avgMinutesToRelief: data.measurableCount > 0
+        ? Math.round(data.totalMinutes / data.measurableCount)
+        : null,
+    }))
+    .sort((a, b) => b.count - a.count);
 }

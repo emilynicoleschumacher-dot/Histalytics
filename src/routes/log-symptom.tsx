@@ -41,6 +41,8 @@ function LogSymptom() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(null);
   const [notes, setNotes] = useState("");
   const [loggedAt, setLoggedAt] = useState(nowISO());
+  const [reliefAt, setReliefAt] = useState("");
+  const [reliefNote, setReliefNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [favoriteVersion, setFavoriteVersion] = useState(0);
@@ -57,6 +59,8 @@ function LogSymptom() {
         if (entry.durationMinutes) setDuration(`${entry.durationMinutes} min`);
         if (entry.activityLevel) setActivityLevel(entry.activityLevel);
         if (entry.notes) setNotes(entry.notes);
+        if (entry.reliefAt) setReliefAt(entry.reliefAt.slice(0, 16));
+        if (entry.reliefNote) setReliefNote(entry.reliefNote);
         setLoggedAt(entry.loggedAt.slice(0, 16));
       }
     }
@@ -113,6 +117,8 @@ function LogSymptom() {
       activityLevel,
       notes: notes || null,
       loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
+      reliefAt: reliefAt ? new Date(reliefAt).toISOString() : null,
+      reliefNote: reliefNote.trim() || null,
     };
 
     if (editId) {
@@ -134,6 +140,8 @@ function LogSymptom() {
         setSeverity(5);
         setDuration("");
         setNotes("");
+        setReliefAt("");
+        setReliefNote("");
         setLoggedAt(nowISO());
       }
     }, 2000);
@@ -208,6 +216,31 @@ function LogSymptom() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
+
+        {/* ── What Helped? ── */}
+        <div className="border-t border-border-light pt-6">
+          <h3 className="text-sm font-semibold text-text-primary mb-1">What helped?</h3>
+          <p className="text-xs text-text-muted mb-4">
+            Optional — track which interventions provided relief and how quickly.
+          </p>
+          <div className="space-y-4">
+            <Input
+              label="What intervention helped?"
+              type="text"
+              placeholder="e.g. DAO supplement, Antihistamine, Rest"
+              value={reliefNote}
+              onChange={(e) => setReliefNote(e.target.value)}
+              helperText="Common interventions: DAO supplement, Antihistamine, Rest, Heat pack, Ice pack, Low histamine meal"
+            />
+            <Input
+              label="When did relief start?"
+              type="datetime-local"
+              value={reliefAt}
+              onChange={(e) => setReliefAt(e.target.value)}
+              helperText="Approximately when did you start feeling relief?"
+            />
+          </div>
+        </div>
 
         <ActivityLevelToggle
           value={activityLevel}

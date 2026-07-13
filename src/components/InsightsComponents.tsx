@@ -672,3 +672,78 @@ function EmptyInsight({ icon, title, description, className = "" }: EmptyInsight
     </div>
   );
 }
+
+/* ── Relief / "What Helped?" Insights Panel ── */
+
+export interface ReliefInsightItem {
+  intervention: string;
+  count: number;
+  avgMinutesToRelief: number | null;
+}
+
+interface ReliefInsightsPanelProps {
+  data: ReliefInsightItem[];
+}
+
+const INTERVENTION_COLORS: Record<string, string> = {
+  "dao supplement": "bg-purple-100 text-purple-700 border-purple-200",
+  "antihistamine": "bg-blue-100 text-blue-700 border-blue-200",
+  "rest": "bg-green-100 text-green-700 border-green-200",
+  "heat pack": "bg-orange-100 text-orange-700 border-orange-200",
+  "ice pack": "bg-cyan-100 text-cyan-700 border-cyan-200",
+  "low histamine meal": "bg-teal-100 text-teal-700 border-teal-200",
+};
+
+function getInterventionColor(note: string): string {
+  const key = note.toLowerCase();
+  return INTERVENTION_COLORS[key] || "bg-amber-50 text-amber-700 border-amber-200";
+}
+
+export function ReliefInsightsPanel({ data }: ReliefInsightsPanelProps) {
+  if (data.length === 0) {
+    return (
+      <EmptyInsight
+        icon={
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+          </svg>
+        }
+        title="No relief data yet"
+        description="Log symptoms with the 'What helped?' field to discover which interventions work best for you."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-text-muted">
+        Interventions ranked by how often they provided relief. When both times are logged, average time to relief is shown.
+      </p>
+      <div className="grid gap-3">
+        {data.map((item) => (
+          <div
+            key={item.intervention}
+            className="flex items-center gap-4 p-4 rounded-xl border border-border-light bg-surface-card"
+          >
+            <div className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getInterventionColor(item.intervention)}`}>
+              {item.intervention}
+            </div>
+            <div className="flex-1" />
+            <div className="text-right">
+              <div className="text-sm font-semibold text-text-primary">
+                {item.count}x
+              </div>
+              <div className="text-xs text-text-muted">
+                {item.avgMinutesToRelief !== null
+                  ? item.avgMinutesToRelief < 60
+                    ? `${item.avgMinutesToRelief} min`
+                    : `${Math.floor(item.avgMinutesToRelief / 60)}h ${item.avgMinutesToRelief % 60}m`
+                  : "No time data"}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

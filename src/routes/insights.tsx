@@ -14,6 +14,7 @@ import {
   DayOfWeekBreakdown,
   CorrelationBar,
   CombinedTimeline,
+  ReliefInsightsPanel,
 } from "~/components/InsightsComponents";
 import { Link } from "@tanstack/react-router";
 import {
@@ -23,6 +24,7 @@ import {
   getIngredientCorrelations,
   getCombinedTimeline,
   getActivityLevelCorrelation,
+  getReliefInsights,
   type InsightStats,
   type TrendDayPoint,
   type FlareDayItem,
@@ -30,6 +32,7 @@ import {
   type IngredientCorrelation,
   type TimelineEntry,
   type ActivityLevelCorrelation,
+  type ReliefInsight,
 } from "~/lib/data-store";
 
 export const Route = createFileRoute("/insights")({
@@ -52,6 +55,7 @@ function useInsightData() {
   const [correlations, setCorrelations] = useState<IngredientCorrelation[]>([]);
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
   const [activityCorrelation, setActivityCorrelation] = useState<ActivityLevelCorrelation[]>([]);
+  const [reliefData, setReliefData] = useState<ReliefInsight[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,19 +71,20 @@ function useInsightData() {
     setCorrelations(getIngredientCorrelations(timeRange));
     setTimelineEntries(getCombinedTimeline(50));
     setActivityCorrelation(getActivityLevelCorrelation(timeRange));
+    setReliefData(getReliefInsights());
     setLoading(false);
   }, [timeRange]);
 
   return {
     stats, trendData, flareData, flareCount, totalDays, dayOfWeekData,
-    correlations, timelineEntries, activityCorrelation, timeRange, setTimeRange, loading,
+    correlations, timelineEntries, activityCorrelation, reliefData, timeRange, setTimeRange, loading,
   };
 }
 
 function InsightsPage() {
   const {
     stats, trendData, flareData, flareCount, totalDays, dayOfWeekData,
-    correlations, timelineEntries, activityCorrelation, timeRange, setTimeRange, loading,
+    correlations, timelineEntries, activityCorrelation, reliefData, timeRange, setTimeRange, loading,
   } = useInsightData();
 
   const hasAnyData = stats.symptomsLogged > 0 || stats.daysTracked > 0;
@@ -239,7 +244,24 @@ function InsightsPage() {
             </CardFooter>
           </Card>
 
-          {/* ── Section 6: Combined Timeline ── */}
+          {/* ── Section 6: What Helps? ── */}
+          <Card elevated className="mb-8">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-text-primary">What Helps?</h2>
+                <Badge variant="teal" dot>New</Badge>
+                <InfoTooltip text="Interventions you've logged when logging symptoms. Track what helps and how quickly it works." />
+              </div>
+            </CardHeader>
+            <CardBody>
+              <ReliefInsightsPanel data={reliefData} />
+            </CardBody>
+            <CardFooter>
+              <Link to="/log-symptom" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Add 'What helped?' on your next symptom log</Link>
+            </CardFooter>
+          </Card>
+
+          {/* ── Section 7: Combined Timeline ── */}
           <Card elevated className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
