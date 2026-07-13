@@ -96,13 +96,28 @@ export async function syncFromAPI(): Promise<void> {
         // Merge: API data is authoritative, keep existing local entries too (deduplicate by id)
         const existing = getStore<any[]>(f.key, []);
         const existingIds = new Set(existing.map((e: any) => e.id));
-        const newItems = items.filter((i: any) => !existingIds.has(i.id));
+        const deletedIds = getDeletedIds(f.key);
+        const newItems = items.filter((i: any) => !existingIds.has(i.id) && !deletedIds.has(i.id));
         setStore(f.key, [...newItems, ...existing]);
       }
     } catch {
       // Silently skip — localStorage data is still available
     }
   }
+}
+
+/** Track a deleted item ID so syncFromAPI doesn't restore it from the server. */
+function trackDeletedId(storeKey: string, id: string): void {
+  const deleted = getStore<Record<string, string[]>>("deleted_log_ids", {});
+  if (!deleted[storeKey]) deleted[storeKey] = [];
+  if (!deleted[storeKey].includes(id)) deleted[storeKey].push(id);
+  setStore("deleted_log_ids", deleted);
+}
+
+/** Get set of deleted IDs for a given store key. */
+function getDeletedIds(storeKey: string): Set<string> {
+  const deleted = getStore<Record<string, string[]>>("deleted_log_ids", {});
+  return new Set(deleted[storeKey] || []);
 }
 
 export type ActivityLevel = "low" | "medium" | "high" | null;
@@ -286,6 +301,8 @@ export function deleteSymptom(id: string): boolean {
   const filtered = logs.filter((s) => s.id !== id);
   if (filtered.length === logs.length) return false;
   setStore("symptom_logs", filtered);
+  // Track deletion so syncFromAPI doesn't restore it
+  trackDeletedId("symptom_logs", id);
   return true;
 }
 
@@ -368,6 +385,7 @@ export function deleteMeal(id: string): boolean {
   const filtered = logs.filter((m) => m.id !== id);
   if (filtered.length === logs.length) return false;
   setStore("meal_logs", filtered);
+  trackDeletedId("meal_logs", id);
   return true;
 }
 
@@ -447,6 +465,7 @@ export function deleteSupplement(id: string): boolean {
   const filtered = logs.filter((s) => s.id !== id);
   if (filtered.length === logs.length) return false;
   setStore("supplement_logs", filtered);
+  trackDeletedId("supplement_logs", id);
   return true;
 }
 
@@ -709,6 +728,7 @@ export function deleteProduct(id: string): boolean {
   const filtered = logs.filter((p) => p.id !== id);
   if (filtered.length === logs.length) return false;
   setStore("product_logs", filtered);
+  trackDeletedId("product_logs", id);
   return true;
 }
 
