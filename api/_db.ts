@@ -41,6 +41,8 @@ export async function initDB() {
     severity INTEGER NOT NULL CHECK(severity >= 0 AND severity <= 10),
     duration_minutes INTEGER,
     notes TEXT,
+    relief_at TIMESTAMPTZ,
+    relief_note TEXT,
     logged_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
