@@ -221,7 +221,7 @@ function InsightsPage() {
               ) : (
                 <>
                   <p className="text-sm text-text-muted mb-5">
-                    Ingredients ranked by how often they appear on your flare days.
+                    Ingredients ranked by how often they appear on your flare days. <strong>Flare-only</strong> ingredients are highlighted — these appeared on flare days but never on non-flare days.
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mb-5 text-xs sm:text-sm text-text-muted">
                     <span className="text-coral-500 font-medium">Red</span> = frequent companion,

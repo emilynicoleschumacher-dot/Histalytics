@@ -1037,6 +1037,8 @@ export interface IngredientCorrelation {
   ingredientName: string;
   timesLogged: number;
   timesOnFlareDays: number;
+  timesOnNonFlareDays: number;
+  flareOnly: boolean;
   correlationPercent: number;
   category: string;
   logDates: string[];
@@ -1057,10 +1059,13 @@ export function getIngredientCorrelations(range: TimeRange): IngredientCorrelati
     byDay[ds].push(s);
   }
   const flareDays = new Set<string>();
+  const nonFlareDays = new Set<string>();
   for (const [ds, daySymptoms] of Object.entries(byDay)) {
     const avg = daySymptoms.reduce((sum, s) => sum + s.severity, 0) / daySymptoms.length;
     if (avg >= 6) {
       flareDays.add(ds);
+    } else {
+      nonFlareDays.add(ds);
     }
   }
 
@@ -1073,21 +1078,20 @@ export function getIngredientCorrelations(range: TimeRange): IngredientCorrelati
     ingByName[ing.name].dates.push(toDateStr(ing.loggedAt));
   }
 
-  // Also get ingredient info from meal logs (which log via logIngredient)
-  // And from product/supplement logs
-
   const correlations: IngredientCorrelation[] = Object.entries(ingByName)
     .map(([name, data]) => {
-      const timesLogged = data.dates.length;
-      const timesOnFlareDays = data.dates.filter((d) => flareDays.has(d)).length;
+      const uniqueDates = [...new Set(data.dates)];
+      const timesLogged = uniqueDates.length;
+      const timesOnFlareDays = uniqueDates.filter((d) => flareDays.has(d)).length;
+      const timesOnNonFlareDays = uniqueDates.filter((d) => nonFlareDays.has(d) || !flareDays.has(d)).length;
       const correlationPercent = timesLogged > 0
         ? Math.round((timesOnFlareDays / timesLogged) * 100)
         : 0;
+      const flareOnly = timesOnNonFlareDays === 0 && timesOnFlareDays > 0;
 
       // Get sample log dates for detail expansion
       const uniqueFlareDates = [...new Set(data.dates.filter((d) => flareDays.has(d)))];
       const logDates = uniqueFlareDates.slice(0, 5).map((d) => {
-        // Find avg severity for that flare day
         const daySymptoms = byDay[d] || [];
         const avgSev = daySymptoms.length
           ? Math.round((daySymptoms.reduce((s, ss) => s + ss.severity, 0) / daySymptoms.length) * 10) / 10
@@ -1096,20 +1100,27 @@ export function getIngredientCorrelations(range: TimeRange): IngredientCorrelati
           month: "short",
           day: "numeric",
         });
-        return `${dateLabel} ��� Flare day (avg ${avgSev}/10)`;
+        return `${dateLabel} - Flare day (avg ${avgSev}/10)`;
       });
 
       return {
         ingredientName: name,
         timesLogged,
         timesOnFlareDays,
+        timesOnNonFlareDays,
+        flareOnly,
         correlationPercent,
         category: data.category,
         logDates,
       };
     })
     .filter((c) => c.timesLogged > 0)
-    .sort((a, b) => b.correlationPercent - a.correlationPercent);
+    .sort((a, b) => {
+      // Flare-only ingredients first, then by highest correlation
+      if (a.flareOnly && !b.flareOnly) return -1;
+      if (!a.flareOnly && b.flareOnly) return 1;
+      return b.correlationPercent - a.correlationPercent;
+    });
 
   return correlations;
 }
@@ -1209,7 +1220,7 @@ export function getCombinedTimeline(limit = 50): TimelineEntry[] {
 
 /* ══════════════════════════════════════════
    Activity Level Correlation
-   ══════════════════════════������═══════════════ */
+   ══════════════════════════------═══════════════ */
 
 export interface ActivityLevelCorrelation {
   level: string;

@@ -376,6 +376,8 @@ interface CorrelationItem {
   ingredientName: string;
   timesLogged: number;
   timesOnFlareDays: number;
+  timesOnNonFlareDays: number;
+  flareOnly: boolean;
   correlationPercent: number; // 0-100
   category: string;
   logDates?: string[];
@@ -425,6 +427,11 @@ export function CorrelationBar({ item, defaultOpen = false }: CorrelationBarProp
                 <span className="text-sm font-medium text-text-primary truncate">
                   {item.ingredientName}
                 </span>
+                {item.flareOnly && (
+                  <span className="text-[10px] font-bold text-coral-600 bg-coral-50 px-1.5 py-0.5 rounded shrink-0">
+                    FLARE ONLY
+                  </span>
+                )}
                 <span className="text-xs text-text-muted shrink-0">
                   {item.timesLogged}x
                 </span>
@@ -455,7 +462,7 @@ export function CorrelationBar({ item, defaultOpen = false }: CorrelationBarProp
             <div className="flex justify-between mt-1">
               <span className="text-[10px] text-text-muted">{correlationLabel}</span>
               <span className="text-[10px] text-text-muted">
-                {item.timesOnFlareDays} of {item.timesLogged} on flare days
+                {item.timesOnFlareDays} flare / {item.timesOnNonFlareDays} non-flare
               </span>
             </div>
           </div>
