@@ -15,6 +15,7 @@ import {
   getMealById,
   updateMeal,
   utcToLocalDatetime,
+  localDatetimeToISO,
   type ActivityLevel,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
@@ -107,7 +108,7 @@ function LogMeal() {
       ingredients: ingredients.length > 0 ? ingredients : null,
       activityLevel,
       notes: notes || null,
-      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
+      loggedAt: loggedAt ? localDatetimeToISO(loggedAt) : null,
     };
 
     if (editId) {

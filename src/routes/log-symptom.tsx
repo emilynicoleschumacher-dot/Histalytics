@@ -13,6 +13,7 @@ import {
   getSymptomById,
   updateSymptom,
   utcToLocalDatetime,
+  localDatetimeToISO,
   type ActivityLevel,
 } from "~/lib/data-store";
 import { ActivityLevelToggle } from "~/components/ActivityLevelToggle";
@@ -117,8 +118,8 @@ function LogSymptom() {
       durationMinutes: duration ? parseInt(duration.match(/\d+/)?.[0] || "0", 10) || null : null,
       activityLevel,
       notes: notes || null,
-      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
-      reliefAt: reliefAt ? new Date(reliefAt).toISOString() : null,
+      loggedAt: loggedAt ? localDatetimeToISO(loggedAt) : null,
+      reliefAt: reliefAt ? localDatetimeToISO(reliefAt) : null,
       reliefNote: reliefNote.trim() || null,
     };
 

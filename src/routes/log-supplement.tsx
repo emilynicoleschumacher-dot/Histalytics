@@ -13,6 +13,7 @@ import {
   getSupplementById,
   updateSupplement,
   utcToLocalDatetime,
+  localDatetimeToISO,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
@@ -114,7 +115,7 @@ function LogSupplement() {
       dosage: dosage.trim() || null,
       ingredients: ingredients.trim() || null,
       notes: notes.trim() || null,
-      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
+      loggedAt: loggedAt ? localDatetimeToISO(loggedAt) : null,
     };
 
     if (editId) {

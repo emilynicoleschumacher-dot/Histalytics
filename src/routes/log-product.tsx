@@ -13,6 +13,7 @@ import {
   getProductById,
   updateProduct,
   utcToLocalDatetime,
+  localDatetimeToISO,
 } from "~/lib/data-store";
 import { FavoritesBar, SaveFavoriteToggle } from "~/components/FavoritesBar";
 
@@ -99,7 +100,7 @@ function LogProduct() {
       productType: productType || "other",
       ingredients: ingredients || null,
       notes: notes || null,
-      loggedAt: loggedAt ? new Date(loggedAt).toISOString() : null,
+      loggedAt: loggedAt ? localDatetimeToISO(loggedAt) : null,
     };
 
     if (editId) {

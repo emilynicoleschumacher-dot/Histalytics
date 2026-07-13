@@ -172,6 +172,23 @@ export function utcToLocalDatetime(isoStr: string): string {
   return `${y}-${m}-${day}T${h}:${min}`;
 }
 
+/** Convert a datetime-local value (YYYY-MM-DDTHH:MM) to a timezone-aware ISO string */
+export function localDatetimeToISO(local: string): string {
+  const d = new Date(local);
+  const offset = -d.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const pad = (n: number) => String(Math.abs(n)).padStart(2, "0");
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const sec = String(d.getSeconds()).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  const tz = sign + pad(Math.floor(offset / 60)) + ":" + pad(offset % 60);
+  return `${y}-${m}-${day}T${h}:${min}:${sec}.${ms}${tz}`;
+}
+
 function getStore<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
