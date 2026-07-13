@@ -153,7 +153,7 @@ function LogMeal() {
         </div>
       )}
 
-      <FavoritesBar type="meal" onSelect={handleFavoriteSelect} />
+      <FavoritesBar key={favoriteVersion} type="meal" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card elevated>

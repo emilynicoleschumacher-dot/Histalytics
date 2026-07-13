@@ -167,7 +167,7 @@ function LogSymptom() {
         </div>
       )}
 
-      <FavoritesBar type="symptom" onSelect={handleFavoriteSelect} />
+      <FavoritesBar key={favoriteVersion} type="symptom" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Select

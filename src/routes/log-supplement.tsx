@@ -160,7 +160,7 @@ function LogSupplement() {
         </div>
       )}
 
-      <FavoritesBar type="supplement" onSelect={handleFavoriteSelect} />
+      <FavoritesBar key={favoriteVersion} type="supplement" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input

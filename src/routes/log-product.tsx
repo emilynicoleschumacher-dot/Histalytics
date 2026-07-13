@@ -145,7 +145,7 @@ function LogProduct() {
         </div>
       )}
 
-      <FavoritesBar type="product" onSelect={handleFavoriteSelect} />
+      <FavoritesBar key={favoriteVersion} type="product" onSelect={handleFavoriteSelect} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
