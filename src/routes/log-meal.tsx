@@ -227,6 +227,7 @@ function LogMeal() {
           </CardHeader>
           <CardBody>
             <IngredientInput
+              key={editId || "new"}
               label=""
               placeholder="Type an ingredient and press Enter, or paste a comma-separated list..."
               value={ingredients}
