@@ -79,6 +79,7 @@ export async function syncFromAPI(): Promise<void> {
         supplementName: r.supplement_name,
         brand: r.brand ?? null,
         dosage: r.dosage ?? null,
+        ingredients: r.ingredients ?? null,
         notes: r.notes ?? null,
         loggedAt: r.logged_at,
       }),
@@ -91,10 +92,28 @@ export async function syncFromAPI(): Promise<void> {
       if (!res) continue;
       const rows = await res.json();
       if (!Array.isArray(rows)) continue;
-      const items = rows.map(f.mapper).filter(Boolean);
-      if (items.length > 0) {
-        // Full replace: API data is authoritative (deletes are already synced via API DELETE)
-        setStore(f.key, items);
+      const apiItems = rows.map(f.mapper).filter(Boolean);
+      if (apiItems.length > 0) {
+        // Merge: API data is authoritative, but preserve local fields the API doesn't have yet
+        const localItems = getStore<any[]>(f.key, []);
+        const localById: Record<string, any> = {};
+        for (const item of localItems) {
+          if (item.id) localById[item.id] = item;
+        }
+        const merged = apiItems.map((apiItem: any) => {
+          const localItem = localById[apiItem.id];
+          if (!localItem) return apiItem;
+          // Keep local values for fields that are null/undefined on the server (e.g. ingredients from old logs)
+          return {
+            ...apiItem,
+            ...Object.fromEntries(
+              Object.entries(localItem).filter(
+                ([key, val]) => val != null && (apiItem as any)[key] == null && key !== "id",
+              ),
+            ),
+          };
+        });
+        setStore(f.key, merged);
       }
     } catch {
       // Silently skip — localStorage data is still available
