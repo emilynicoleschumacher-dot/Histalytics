@@ -93,7 +93,8 @@ function History() {
       notes: s.notes || undefined,
       time: new Date(s.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       ts: new Date(s.loggedAt).getTime(),
-      editPath: `/log-symptom?edit=${s.id}`,
+      editRoute: "/log-symptom",
+      editId: s.id,
     })),
     ...allMeals.map((m) => ({
       id: m.id,
@@ -103,7 +104,8 @@ function History() {
       notes: m.notes || undefined,
       time: m.mealType || new Date(m.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       ts: new Date(m.loggedAt).getTime(),
-      editPath: `/log-meal?edit=${m.id}`,
+      editRoute: "/log-meal",
+      editId: m.id,
     })),
     ...allSupplements.map((s) => ({
       id: s.id,
@@ -113,7 +115,8 @@ function History() {
       notes: s.brand ? `${s.brand}${s.dosage ? ` — ${s.dosage}` : ""}` : s.dosage || undefined,
       time: new Date(s.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       ts: new Date(s.loggedAt).getTime(),
-      editPath: `/log-supplement?edit=${s.id}`,
+      editRoute: "/log-supplement",
+      editId: s.id,
     })),
     ...allProducts.map((p) => ({
       id: p.id,
@@ -123,7 +126,8 @@ function History() {
       notes: p.brand ? `${p.brand}${p.productType ? ` — ${p.productType}` : ""}` : p.productType || undefined,
       time: new Date(p.loggedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       ts: new Date(p.loggedAt).getTime(),
-      editPath: `/log-product?edit=${p.id}`,
+      editRoute: "/log-product",
+      editId: p.id,
     })),
   ].sort((a, b) => b.ts - a.ts);
 
@@ -371,7 +375,8 @@ function History() {
                   {/* Edit & Delete buttons */}
                   <div className="flex items-center gap-1 shrink-0">
                     <Link
-                      to={entry.editPath}
+                      to={entry.editRoute}
+                      search={{ edit: entry.editId }}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       title="Edit"
                     >
