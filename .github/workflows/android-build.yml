@@ -1,22 +1,24 @@
 name: Build Android App
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - run: cd android && ./gradlew bundleRelease --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - name: Debug - list files
-        run: ls -la android/ && echo "---" && cat android/gradle.properties
+
       - run: chmod +x android/gradlew
-      - name: Build release bundle
-        run: cd android && ./gradlew bundleRelease --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true
+      - run: cd android && ./gradlew bundleRelease --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
           name: histalytics-android
