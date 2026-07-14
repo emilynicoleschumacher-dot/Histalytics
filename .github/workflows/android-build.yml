@@ -1,10 +1,6 @@
 name: Build Android App
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
+on: [push, workflow_dispatch]
+permissions: write-all
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,15 +9,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "npm"
       - uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "17"
-      - run: npm ci
+          distribution: temurin
+          java-version: 17
+      - run: npm install
       - run: npm run build
       - run: npx cap add android
       - run: npx cap copy android
+      - run: chmod +x android/gradlew
       - run: cd android && ./gradlew bundleRelease
       - uses: actions/upload-artifact@v4
         with:
