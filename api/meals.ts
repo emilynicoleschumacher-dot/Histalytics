@@ -13,15 +13,15 @@ export default async function handler(req: Request) {
   const userId = await getOrCreateUser(clerkId);
 
   if (req.method === "POST") {
-    const { food_name, meal_type, portion_size, notes, logged_at } = await req.json();
+    const { food_name, meal_type, portion_size, notes, logged_at, ingredients } = await req.json();
     if (!food_name) {
       return new Response(JSON.stringify({ error: "food_name required" }), {
         status: 400, headers: { "content-type": "application/json" },
       });
     }
     const [meal] = await db`
-      INSERT INTO meal_logs (user_id, food_name, meal_type, portion_size, notes, logged_at)
-      VALUES (${userId}, ${food_name}, ${meal_type || null}, ${portion_size || null}, ${notes || null}, ${logged_at || new Date().toISOString()})
+      INSERT INTO meal_logs (user_id, food_name, meal_type, portion_size, notes, logged_at, ingredients)
+      VALUES (${userId}, ${food_name}, ${meal_type || null}, ${portion_size || null}, ${notes || null}, ${logged_at || new Date().toISOString()}, ${ingredients ? JSON.stringify(ingredients) : null})
       RETURNING id, logged_at
     `;
     return new Response(JSON.stringify(meal), {
@@ -32,7 +32,7 @@ export default async function handler(req: Request) {
   if (req.method === "GET") {
     const limit = parseInt(url.searchParams.get("limit") || "50");
     const meals = await db`
-      SELECT id, food_name, meal_type, portion_size, notes, logged_at
+      SELECT id, food_name, meal_type, portion_size, notes, logged_at, ingredients
       FROM meal_logs WHERE user_id = ${userId}
       ORDER BY logged_at DESC LIMIT ${limit}
     `;
@@ -48,14 +48,15 @@ export default async function handler(req: Request) {
         status: 400, headers: { "content-type": "application/json" },
       });
     }
-    const { food_name, meal_type, portion_size, notes, logged_at } = await req.json();
+    const { food_name, meal_type, portion_size, notes, logged_at, ingredients } = await req.json();
     await db`
       UPDATE meal_logs SET
         food_name = ${food_name || null},
         meal_type = ${meal_type || null},
         portion_size = ${portion_size || null},
         notes = ${notes || null},
-        logged_at = ${logged_at || null}
+        logged_at = ${logged_at || null},
+        ingredients = ${ingredients ? JSON.stringify(ingredients) : null}
       WHERE id = ${id} AND user_id = ${userId}
     `;
     return new Response(JSON.stringify({ updated: true }), {

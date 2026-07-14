@@ -13,15 +13,15 @@ export default async function handler(req: Request) {
   const userId = await getOrCreateUser(clerkId);
 
   if (req.method === "POST") {
-    const { supplement_name, brand, dosage, frequency, notes, logged_at } = await req.json();
+    const { supplement_name, brand, dosage, frequency, notes, logged_at, ingredients } = await req.json();
     if (!supplement_name) {
       return new Response(JSON.stringify({ error: "supplement_name required" }), {
         status: 400, headers: { "content-type": "application/json" },
       });
     }
     const [supplement] = await db`
-      INSERT INTO supplement_logs (user_id, supplement_name, brand, dosage, frequency, notes, logged_at)
-      VALUES (${userId}, ${supplement_name}, ${brand || null}, ${dosage || null}, ${frequency || null}, ${notes || null}, ${logged_at || new Date().toISOString()})
+      INSERT INTO supplement_logs (user_id, supplement_name, brand, dosage, frequency, notes, logged_at, ingredients)
+      VALUES (${userId}, ${supplement_name}, ${brand || null}, ${dosage || null}, ${frequency || null}, ${notes || null}, ${logged_at || new Date().toISOString()}, ${ingredients || null})
       RETURNING id, logged_at
     `;
     return new Response(JSON.stringify(supplement), {
@@ -32,7 +32,7 @@ export default async function handler(req: Request) {
   if (req.method === "GET") {
     const limit = parseInt(url.searchParams.get("limit") || "50");
     const supplements = await db`
-      SELECT id, supplement_name, brand, dosage, frequency, notes, logged_at
+      SELECT id, supplement_name, brand, dosage, frequency, notes, logged_at, ingredients
       FROM supplement_logs WHERE user_id = ${userId}
       ORDER BY logged_at DESC LIMIT ${limit}
     `;
@@ -48,14 +48,15 @@ export default async function handler(req: Request) {
         status: 400, headers: { "content-type": "application/json" },
       });
     }
-    const { supplement_name, brand, dosage, notes, logged_at } = await req.json();
+    const { supplement_name, brand, dosage, notes, logged_at, ingredients } = await req.json();
     await db`
       UPDATE supplement_logs SET
         supplement_name = ${supplement_name || null},
         brand = ${brand || null},
         dosage = ${dosage || null},
         notes = ${notes || null},
-        logged_at = ${logged_at || null}
+        logged_at = ${logged_at || null},
+        ingredients = ${ingredients || null}
       WHERE id = ${id} AND user_id = ${userId}
     `;
     return new Response(JSON.stringify({ updated: true }), {

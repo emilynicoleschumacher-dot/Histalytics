@@ -389,6 +389,7 @@ export async function logMeal(data: {
       portion_size: data.portionSize,
       notes: data.notes,
       logged_at: data.loggedAt,
+      ingredients: data.ingredients,
     }),
   }).catch(() => {});
 
@@ -422,6 +423,7 @@ export function updateMeal(id: string, data: Partial<Omit<MealLog, "id">>): bool
       portion_size: data.portionSize,
       notes: data.notes,
       logged_at: data.loggedAt,
+      ingredients: data.ingredients,
     }),
   }).catch(() => {});
   return true;
@@ -483,6 +485,7 @@ export async function logSupplement(data: {
       dosage: data.dosage,
       notes: data.notes,
       logged_at: data.loggedAt,
+      ingredients: data.ingredients,
     }),
   }).catch(() => {});
 
@@ -516,6 +519,7 @@ export function updateSupplement(id: string, data: Partial<Omit<SupplementLog, "
       dosage: data.dosage,
       notes: data.notes,
       logged_at: data.loggedAt,
+      ingredients: data.ingredients,
     }),
   }).catch(() => {});
   return true;
