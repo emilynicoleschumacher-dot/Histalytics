@@ -24,16 +24,6 @@ jobs:
 
       - run: npm install
       - run: npm run build
-
-      - name: Add Android platform
-        run: |
-          rm -rf android
-          npx cap add android 2>&1
-          if [ ! -f android/capacitor.settings.gradle ]; then
-            echo 'include ":capacitor-android"' > android/capacitor.settings.gradle
-            echo 'project(":capacitor-android").projectDir = new File("../node_modules/@capacitor/android/capacitor")' >> android/capacitor.settings.gradle
-          fi
-
       - run: npx cap copy android
       - run: chmod +x android/gradlew
       - run: cd android && ./gradlew bundleRelease --no-daemon
