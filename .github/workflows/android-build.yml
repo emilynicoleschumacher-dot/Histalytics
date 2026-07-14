@@ -19,17 +19,25 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
+
       - run: npm install
       - run: npm run build
-      - run: npx cap add android
+
+      - name: Clean and add Android platform
+        run: |
+          rm -rf android
+          npx cap add android
+
       - run: npx cap copy android
       - run: chmod +x android/gradlew
       - run: cd android && ./gradlew bundleRelease
+
       - uses: actions/upload-artifact@v4
         with:
           name: histalytics-android
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
       - uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
