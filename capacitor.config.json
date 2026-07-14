@@ -1,11 +1,7 @@
 {
   "appId": "com.histalytics.app",
   "appName": "Histalytics",
-  "webDir": ".vercel/output/static",
-  "server": {
-    "url": "https://histalytics.vercel.app",
-    "cleartext": false
-  },
+  "webDir": "dist",
   "android": {
     "buildOptions": {
       "keystorePath": null
