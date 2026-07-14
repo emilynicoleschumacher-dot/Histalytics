@@ -1,9 +1,17 @@
 name: Build Android App
-on: [push, workflow_dispatch]
-permissions: write-all
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,12 +21,23 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
       - run: npm install
       - run: npm run build
-      - run: npx cap add android
+
+      - name: Add Android platform
+        run: |
+          rm -rf android
+          npx cap add android 2>&1
+          if [ ! -f android/capacitor.settings.gradle ]; then
+            echo 'include ":capacitor-android"' > android/capacitor.settings.gradle
+            echo 'project(":capacitor-android").projectDir = new File("../node_modules/@capacitor/android/capacitor")' >> android/capacitor.settings.gradle
+          fi
+
       - run: npx cap copy android
       - run: chmod +x android/gradlew
-      - run: cd android && ./gradlew bundleRelease
+      - run: cd android && ./gradlew bundleRelease --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
           name: histalytics-android
